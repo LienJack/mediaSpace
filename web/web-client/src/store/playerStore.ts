@@ -16,7 +16,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       const { player } = state
       if (player) {
         player.seek(time)
-        player.play()
+        setTimeout(()=>{
+          player.pause()
+        },10)
       }
       return state
     })

@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState, useRef } from "react";
 import {
   Typography,
   Avatar,
@@ -6,10 +6,22 @@ import {
   ListItemAvatar,
   ListItemText,
   Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  TextField,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
 import { Comment } from "@/types/comment";
 import { formatTime } from "@/utils/time";
 import ImagePreview from "@/components/ImagePreview";
+import { useCommentStore } from "@/store/commentStore";
+import DeleteIcon from '@mui/icons-material/Delete';
+import ChatIcon from '@mui/icons-material/Chat';
+import { AddPhotoAlternate, Delete } from "@mui/icons-material";
+import useUserStore from "@/store/userStore";
 
 interface CommentItemProps {
   comment: Comment;
@@ -22,6 +34,13 @@ const CommentItem: FC<CommentItemProps> = ({
   onEdit,
   onTimeClick,
 }) => {
+  const [openDialog, setOpenDialog] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [showInput, setShowInput] = useState(false);
+  const removeComment = useCommentStore((state) => state.removeComment);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { user } = useUserStore();
+
   const handleEdit = () => {
     onEdit?.(comment);
   };
@@ -30,40 +49,64 @@ const CommentItem: FC<CommentItemProps> = ({
     onTimeClick?.(comment.timestamp);
   };
 
-  const secondaryAction = (
-    <Box sx={{ mt: 1 }}>
-      <Typography
-        component="span"
-        variant="caption"
-        color="text.secondary"
-        sx={{ mr: 2 }}
-      >
-        {comment.createdAt}
-      </Typography>
-      <Typography
-        component="span"
-        variant="caption"
-        sx={{
-          cursor: "pointer",
-          color: "text.secondary",
-          "&:hover": { color: "primary.main" },
-        }}
-        onClick={handleEdit}
-      >
-        编辑
-      </Typography>
-    </Box>
-  );
+  const handleDelete = () => {
+    setOpenDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    removeComment(comment.id);
+    setOpenDialog(false);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      setImages((prevImages) => [...prevImages, ...files]);
+    }
+  };
+
+  const handleImageDelete = (index: number) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  };
+
+  const handleShowInput = () => {
+    setShowInput((prev) => !prev);
+  };
+
+  const handleSendComment = () => {
+    const newComment = inputRef.current?.value || "";
+    if (newComment.trim() === "") return;
+
+    const newCommentData: Comment = {
+      id: Math.floor(100 + Math.random() * 900),
+      content: newComment,
+      timestamp: comment.timestamp,
+      createdAt: new Date().toISOString(),
+      username: comment.username,
+      avatarUrl: user.avatar,
+      // images: images,
+    };
+
+    const addComment = useCommentStore.getState().addComment;
+    addComment(newCommentData);
+    inputRef.current!.value = "";
+    setImages([]);
+    setShowInput(false);
+  };
+
   const Primary = () => (
-    <>
+    <Box sx={{ display: "flex", alignItems: "center" }}>
       <Typography
         variant="body2"
+        component="div"
         color="primary"
         sx={{
-          mb: 1,
           fontWeight: "medium",
           cursor: "pointer",
-          display: "inline-block",
           "&:hover": {
             textDecoration: "underline",
           },
@@ -72,14 +115,20 @@ const CommentItem: FC<CommentItemProps> = ({
       >
         {formatTime(comment.timestamp)}
       </Typography>
-      <Typography variant="subtitle2" sx={{ ml: 1, display: "inline-block" }}>
+      <Typography variant="subtitle2" sx={{ ml: 1 }}>
         {comment.username}
       </Typography>
-    </>
+    </Box>
   );
+
   const Secondary = () => (
-    <>
-      <Typography variant="body2" color="text.primary" sx={{ my: 1 }}>
+    <Box>
+      <Typography
+        component="div"
+        variant="body2"
+        color="text.primary"
+        sx={{ my: 1 }}
+      >
         {comment.content}
       </Typography>
 
@@ -89,13 +138,72 @@ const CommentItem: FC<CommentItemProps> = ({
         </Box>
       )}
 
-      {secondaryAction}
-    </>
+      <Box sx={{ mt: 1 }}>
+        <Typography component="div" variant="caption" color="text.secondary">
+          {comment.createdAt}
+        </Typography>
+        <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
+          <IconButton aria-label="comment" size="small" onClick={handleShowInput}>
+            <ChatIcon />
+          </IconButton>
+          <IconButton aria-label="delete" size="small" onClick={handleDelete}>
+            <DeleteIcon />
+          </IconButton>
+        </Box>
+      </Box>
+
+      {showInput && (
+        <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+          <TextField
+            variant="outlined"
+            size="small"
+            fullWidth
+            placeholder="输入评论..."
+            inputRef={inputRef}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <input
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="upload-image"
+                      type="file"
+                      multiple
+                      onChange={handleImageUpload}
+                    />
+                    <label htmlFor="upload-image">
+                      <IconButton component="span">
+                        <AddPhotoAlternate />
+                      </IconButton>
+                    </label>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <Button variant="outlined" size="small" onClick={handleSendComment}>
+            发送
+          </Button>
+        </Box>
+      )}
+
+      <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>是否删除该评论？</DialogTitle>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>取消</Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            删除
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 
   return (
     <ListItem
       alignItems="flex-start"
+      component="div"
       sx={{
         px: 2,
         py: 1.5,
@@ -109,7 +217,11 @@ const CommentItem: FC<CommentItemProps> = ({
       <ListItemAvatar>
         <Avatar src={comment.avatarUrl} alt={comment.username} />
       </ListItemAvatar>
-      <ListItemText primary={<Primary />} secondary={<Secondary />} />
+      <ListItemText
+        primary={<Primary />}
+        secondary={<Secondary />}
+        slots={{ secondary: "div", primary: "div" }}
+      />
     </ListItem>
   );
 };

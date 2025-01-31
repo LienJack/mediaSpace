@@ -2,14 +2,13 @@ import { FC } from 'react';
 import {
   Box,
   Typography,
-  Stack,
-  Divider,
   List,
   Card,
 } from '@mui/material';
 import { Comment } from '@/types/comment';
 import { formatTime } from '@/utils/time';
 import CommentItem from './CommentItem';
+import { useCommentStore } from '@/store/commentStore';
 
 interface CommentGroupProps {
   timestamp: number;
@@ -42,8 +41,8 @@ const CommentGroup: FC<CommentGroupProps> = ({
         {formatTime(timestamp)}
       </Typography>
       
-      <List sx={{ p: 0 }}>
-        {comments.map((comment) => (
+      <List sx={{ p: 0 }} component="div">
+        {comments?.map((comment) => (
           <CommentItem
             key={comment.id}
             comment={comment}
@@ -57,14 +56,16 @@ const CommentGroup: FC<CommentGroupProps> = ({
 };
 
 interface CommentListProps {
-  comments: Comment[];
+  // comments: Comment[];
   onEditComment?: (comment: Comment) => void;
   onTimeClick?: (timestamp: number) => void;
 }
 
-const CommentList: FC<CommentListProps> = ({ comments, onEditComment, onTimeClick }) => {
+const CommentList: FC<CommentListProps> = ({ onEditComment, onTimeClick }) => {
+  const { comments } = useCommentStore();
   // 按 timestamp 对评论进行分组
-  const groupedComments = comments.reduce<Record<number, Comment[]>>((acc, comment) => {
+  if (!Array.isArray(comments)) return null;
+  const groupedComments = comments?.reduce<Record<number, Comment[]>>((acc, comment) => {
     const timestamp = comment.timestamp;
     if (!acc[timestamp]) {
       acc[timestamp] = [];

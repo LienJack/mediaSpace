@@ -22,6 +22,9 @@ import {
   EmojiEmotions as EmojiIcon,
   Send as SendIcon
 } from '@mui/icons-material'
+import { useCommentStore } from '@/store/commentStore'
+import { usePlayerStore } from '@/store/playerStore'
+import { formatToMySQLDateTime } from '@/utils/time'
 
 interface ImageFile {
   file: File
@@ -30,10 +33,11 @@ interface ImageFile {
 }
 
 interface Comment {
-  id: string
+  id: number
   content: string
   images: string[]
   timestamp: number
+  createdAt: string
 }
 
 export const TextEditor = () => {
@@ -43,6 +47,8 @@ export const TextEditor = () => {
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openUploadDialog, setOpenUploadDialog] = useState(false)
+  const { addComment } = useCommentStore()
+  const { player } = usePlayerStore()
 
   // 工具栏按钮配置
   const toolbarButtons = [
@@ -124,17 +130,19 @@ export const TextEditor = () => {
   // 发送评论
   const handleSubmit = async () => {
     if (!content.trim() && images.length === 0) return
+    if (!player) return
 
     const uploadedImageUrls = await uploadImages()
     
     const newComment: Comment = {
-      id: Date.now().toString(),
-      content,
+      id: Math.floor(Math.random() * 900) + 100, // 生成100-999之间的随机数
+      content: content.trim(),
       images: uploadedImageUrls,
-      timestamp: Date.now()
+      timestamp: player.currentTime, // 获取当前视频时间
+      createdAt: formatToMySQLDateTime(new Date())
     }
 
-    setComments(prev => [newComment, ...prev])
+    addComment(newComment)
     setContent('')
     setImages([])
   }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ThemeRegistry from "@/components/ThemeRegistry";
+import React from 'react';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "素材管理库",
-  description: "使用 Next.js 14 创建的 React 应用",
+  description: "素材管理库",
 };
 
 export default function RootLayout({

@@ -5,50 +5,56 @@ import { Box, Paper, Stack } from "@mui/material";
 import Video from "@/components/Video";
 import Player from "xgplayer";
 import { usePlayerStore } from "@/store/playerStore";
-import TextEditor from "@/app/mediaTrack/[id]/TextEditor";
-import { useCallback, useEffect } from 'react';
+import TextEditor from "@/app/sys/mediaTrack/[id]/TextEditor";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCommentStore } from "@/store/commentStore";
+import { VideoProps } from "@/components/Video";
+import { ProgressDot } from "@/components/Video";
 
 export default function LeftPage() {
   const setPlayer = usePlayerStore((state) => state.setPlayer);
   const removePlayer = usePlayerStore((state) => state.removePlayer);
-  const handlePlayerReady = useCallback((player: Player) => {
-    // 确保只在播放器实例真正改变时才更新
-    if (player) {
-      setPlayer(player);
-    }
-  }, [setPlayer]);
+  const [progressDot, setProgressDot] = useState<ProgressDot[]>([]);
+  const handlePlayerReady = useCallback(
+    (player: Player) => {
+      // 确保只在播放器实例真正改变时才更新
+      if (player) {
+        setPlayer(player);
+      }
+    },
+    [setPlayer]
+  );
 
   // 组件卸载时清理播放器实例
   useEffect(() => {
     return () => {
-        removePlayer()
+      removePlayer();
     };
-  }, [setPlayer,removePlayer]);
+  }, [setPlayer, removePlayer]);
 
   const mockUrl =
     "http://192.168.5.89:5244/p/nas/video/yoasobi/32763_1731251147.mp4?sign=iUHNb2ldZhHAlh_wz0nYOkUlJz0oWkuJWhN-bc1hwtw=:0";
-  const progressDot = [
-    {
-      id: 1,
-      time: 3,
-      text: "text1",
-    },
-    {   
-      id: 2,
-      time: 5,
-      text: "text2",
-    },
-    {
-      id: 3,
-      time: 32,
-      text: "text3",
-    },
-    {
-      id: 4,
-      time: 36,
-      text: "text4",
-    },
-  ];
+  const { comments } = useCommentStore();
+    // 转换 comments 为 progressDot
+  useEffect(() => {
+    if (progressDot.length !== 0) {
+      return
+    }
+    const newValues = Array.from(
+      new Map(
+        comments.map((comment) => [
+          comment.timestamp,
+          {
+            id: comment.id,
+            time: comment.timestamp,
+            text: comment.username,
+          },
+        ])
+      ).values()
+    );
+    setProgressDot(newValues);
+  },[comments])
+
 
 
   return (
@@ -58,38 +64,38 @@ export default function LeftPage() {
         p: 2,
         minWidth: "200px", // 最小宽度
         height: "100%",
+        overflow: 'auto',
       }}
     >
       <Stack
         direction="column"
         spacing={2}
-        sx={
-          {
-            //   height: '100%',
-          }
-        }
       >
         {/* 上部分 - 自适应高度 */}
-        <Video
+        <Box sx={{
+          padding: '0 100px',
+         justifyContent: 'center',
+        }}>
+          <Video
             url={mockUrl} // 假设这是视频 API 地址
-            width="100%"
-            height="100%"
+            width='100%'
             progressDots={progressDot}
             onPlayerReady={handlePlayerReady}
           />
+        </Box>
 
         {/* 下部分 - 固定高度 */}
         <Box
           sx={{
-            minHeight: "200px",
+            minHeight: "150px",
             bgcolor: "background.default",
             p: 2,
             borderRadius: 1,
             border: "1px solid #e0e0e0",
-            overflowY: "auto"
+            overflowY: "auto",
           }}
         >
-            <TextEditor />
+          <TextEditor />
         </Box>
       </Stack>
     </Paper>

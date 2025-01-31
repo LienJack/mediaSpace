@@ -3,17 +3,18 @@ import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Player from 'xgplayer'
 import 'xgplayer/dist/index.min.css'
+import { Skeleton } from '@mui/material'
 
 // 定义标记点的数据结构
-interface ProgressDot {
-  id: number
+export interface ProgressDot {
+  id: string
   time: number // 标记点出现的时间(秒)
   text: string // 提示文字
   duration?: number // 标记点持续时间(秒),可选
   color?: string // 标记点颜色,可选
 }
 
-interface VideoProps {
+export interface VideoProps {
   url: string
   width?: string | number 
   height?: string | number
@@ -29,7 +30,7 @@ interface VideoProps {
 const Video = ({ 
   url,
   width = '100%',
-  height= '100%', 
+  height= '80%', 
   poster,
   autoplay = false,
   progressDots = [], // 默认空数组
@@ -45,8 +46,7 @@ const Video = ({
   }, [])
 
   useEffect(() => {
-    if (!isMounted || !containerRef.current) return
-
+    if (!isMounted || !containerRef.current) return 
     // 初始化播放器
     playerRef.current = new Player({
       el: containerRef.current,
@@ -100,14 +100,18 @@ const Video = ({
   if (!isMounted) {
     return (
       <div className="video-container h-full">
-        <div className='h-full' style={{height: height}}></div>
+        <div className='h-full' style={{height: height}}>
+          <Skeleton variant="rectangular" width="100%" height={height} />
+        </div>
       </div>
     )
   }
 
   return (
     <div className="video-container h-full">
-      <div className='h-full' ref={containerRef} style={{height: height}}></div>
+      <div className='h-full' ref={containerRef} style={{height: height}}>
+        <Skeleton variant="rectangular" width="100%" height={height} />
+      </div>
     </div>
   )
 }
