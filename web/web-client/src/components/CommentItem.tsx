@@ -82,7 +82,6 @@ const CommentItem: FC<CommentItemProps> = ({
     if (newComment.trim() === "") return;
 
     const newCommentData: Comment = {
-      id: Math.floor(100 + Math.random() * 900),
       content: newComment,
       timestamp: comment.timestamp,
       createdAt: new Date().toISOString(),

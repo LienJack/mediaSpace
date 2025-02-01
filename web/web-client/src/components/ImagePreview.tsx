@@ -1,11 +1,11 @@
 import { FC, useState } from 'react';
-import Image from 'next/image';
+// import Image from 'next/image';
 import { 
   Dialog,
   DialogContent,
   ImageList,
   ImageListItem,
-  IconButton
+  IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -34,13 +34,11 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
             }}
             onClick={() => handleImageClick(image)}
           >
-            <Image
+            <img
               src={image}
               alt={`评论图片 ${index + 1}`}
-              fill
               sizes="100px"
               style={{ objectFit: 'cover' }}
-              priority={index < 4}
             />
           </ImageListItem>
         ))}
@@ -64,13 +62,11 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
           <CloseIcon />
         </IconButton>
         <DialogContent sx={{ p: 0, position: 'relative', height: '90vh' }}>
-          <Image
+          <img
             src={selectedImage}
             alt="预览图片"
-            fill
             sizes="100vw"
             style={{ objectFit: 'contain' }}
-            priority
           />
         </DialogContent>
       </Dialog>

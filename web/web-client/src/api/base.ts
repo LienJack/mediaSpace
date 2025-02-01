@@ -1,5 +1,6 @@
 import axios from 'axios';
-const baseUrl = 'http://127.0.0.1:4523/m1/5807700-5492742-default';
+// const baseUrl = 'http://127.0.0.1:4523/m1/5807700-5492742-default';
+const baseUrl = 'http://127.0.0.1:3000/api';
 
 // 创建一个 Axios 实例
 const instance = axios.create({
@@ -13,9 +14,9 @@ const instance = axios.create({
 // 添加响应拦截器
 instance.interceptors.response.use(
     response => {
-        const { code, msg, data } = response.data; // 解构返回的数据
+        const { code, msg } = response.data; // 解构返回的数据
         if (code === 200) {
-            return data; // 返回数据
+            return response.data; // 返回数据
         } else {
             // 使用 Alert 组件提示错误信息
             // 这里需要在组件中处理 Alert 的显示

@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator nestjsDto {
+  provider = "prisma-class-validator-generator"
+  output   = "../src/dto"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  userId    Int
+  mediaId   Int
+  isEdited  Boolean   @default(false)
+  imageUrls String
+  timestamp Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+  media     Media     @relation(fields: [mediaId], references: [id], map: "Comment_mediaId_fkey")
+  user      User      @relation(fields: [userId], references: [id], map: "Comment_userId_fkey")
+
+  @@index([mediaId], map: "Comment_mediaId_fkey")
+  @@index([userId], map: "Comment_userId_idx")
+}
+
+model Media {
+  id        Int       @id @default(autoincrement())
+  name      String
+  path      String
+  descript  String?   @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  deletedAt DateTime?
+  comment   Comment[]
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique(map: "User_name_key")
+  account   String    @unique(map: "User_account_key")
+  avatarUrl String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  updatedAt DateTime? @updatedAt
+  comment   Comment[]
+}

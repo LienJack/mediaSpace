@@ -8,24 +8,30 @@ import { useRef, useEffect } from "react";
 import Player from "xgplayer";
 import { useCommentStore } from '@/store/commentStore'
 import { mockComments } from '@/components/mock';
-import { getCommentListReq } from '@/api/comment';
+import { getCommentList } from '@/api/comment';
 import { useRequest } from 'ahooks';
 import { Comment } from '@/types/comment';
-export default function MediaTrackPage() {
+import React from 'react';
+
+const MediaTrackPage = () => {
   const params = useParams();
   const id = params.id as string;
   const { setComments, clearComments } = useCommentStore()
-  const { loading, run : getCommentList } = useRequest(() => getCommentListReq(id), {
+  const { loading, run : getList } = useRequest(() => getCommentList(id), {
+    manual: true,
     onSuccess: (data) => {
       const comments: Comment[] = [];
-      data.list.forEach(item => {
+      data?.list?.forEach(item => {
+        const imageUrls = [
+          "https://avatars.githubusercontent.com/u/90611323"];
+        console.log(imageUrls);
         comments.push({
           id: item.id,
           content: item.content,
           timestamp: item.timestamp ?? 0,
           username: item.user.name,
           avatarUrl: item.user.avatarUrl,
-          images: item.imageUrls,
+          images:  imageUrls,
           createdAt: item.createdAt
         });
       });
@@ -35,7 +41,7 @@ export default function MediaTrackPage() {
   });
   const Init = () => {
     // 获取评论列表
-    getCommentList();
+    getList();
   }
   const destroy = () => {
     clearComments()
@@ -62,4 +68,6 @@ export default function MediaTrackPage() {
       <RightPage loading={loading} />
     </Stack>
   );
-} 
+}
+
+export default MediaTrackPage; 

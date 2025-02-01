@@ -1,0 +1,39 @@
+#MySQL
+services:
+  mysql:
+    image: mysql:8.0.31
+    container_name: media-mysql
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: root # root密码(修改要同时修改data/mysql/init/init.sql中的密码)
+      MYSQL_DATABASE: media_track
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    restart: on-failure
+    volumes:
+      - ./data/mysql/db:/var/lib/mysql
+      - ./data/mysql/init:/docker-entrypoint-initdb.d/
+    ports:
+      - "3307:3306"
+    command:
+      # 将mysql8.0默认密码策略 修改为 原先 策略 (mysql8.0对其默认策略做了更改 会导致密码无法匹配)
+      --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --explicit_defaults_for_timestamp=true --lower_case_table_names=1
+  #Redis
+  redis:
+    image: redis
+    container_name: media-redis
+    command: redis-server --requirepass root # requirepass后为密码(可修改)
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./data/redis:/data
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: mysql
+    ports:
+      - "8081:80" # 访问 phpMyAdmin 的端口
+    depends_on:
+      - mysql
