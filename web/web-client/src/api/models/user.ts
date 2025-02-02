@@ -24,7 +24,7 @@ export interface User {
      * @type {number}
      * @memberof User
      */
-    id: number;
+    id: string;
     /**
      * 
      * @type {string}

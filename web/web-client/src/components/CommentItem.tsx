@@ -15,13 +15,16 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { Comment } from "@/types/comment";
-import { formatTime } from "@/utils/time";
+import { formatTime, formatToMySQLDateTime } from "@/utils/time";
 import ImagePreview from "@/components/ImagePreview";
 import { useCommentStore } from "@/store/commentStore";
-import DeleteIcon from '@mui/icons-material/Delete';
-import ChatIcon from '@mui/icons-material/Chat';
-import { AddPhotoAlternate, Delete } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ChatIcon from "@mui/icons-material/Chat";
+import { AddPhotoAlternate } from "@mui/icons-material";
 import useUserStore from "@/store/userStore";
+import { addCommentApi, AddCommentReq, delCommentApi, getCommentListApi } from "@/api/comment";
+import { useParams } from "next/navigation";
+import React from "react";
 
 interface CommentItemProps {
   comment: Comment;
@@ -35,15 +38,12 @@ const CommentItem: FC<CommentItemProps> = ({
   onTimeClick,
 }) => {
   const [openDialog, setOpenDialog] = useState(false);
-  const [images, setImages] = useState<File[]>([]);
   const [showInput, setShowInput] = useState(false);
-  const removeComment = useCommentStore((state) => state.removeComment);
+  const { removeComment, setComments } = useCommentStore();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { user } = useUserStore();
-
-  const handleEdit = () => {
-    onEdit?.(comment);
-  };
+  const params = useParams();
+  const mediaId = params.id as string;
 
   const handleTimeClick = () => {
     onTimeClick?.(comment.timestamp);
@@ -54,46 +54,36 @@ const CommentItem: FC<CommentItemProps> = ({
   };
 
   const handleConfirmDelete = () => {
-    removeComment(comment.id);
-    setOpenDialog(false);
+    delCommentApi(comment.id).then(() => {
+      getCommentListApi(+mediaId).then((res) => {
+        setComments(res);
+        setOpenDialog(false);
+      });
+    });
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const files = Array.from(event.target.files);
-      setImages((prevImages) => [...prevImages, ...files]);
-    }
-  };
-
-  const handleImageDelete = (index: number) => {
-    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
-  };
-
   const handleShowInput = () => {
     setShowInput((prev) => !prev);
   };
 
-  const handleSendComment = () => {
-    const newComment = inputRef.current?.value || "";
-    if (newComment.trim() === "") return;
-
-    const newCommentData: Comment = {
-      content: newComment,
-      timestamp: comment.timestamp,
-      createdAt: new Date().toISOString(),
-      username: comment.username,
-      avatarUrl: user.avatar,
-      // images: images,
-    };
-
-    const addComment = useCommentStore.getState().addComment;
-    addComment(newCommentData);
+  const handleSendComment = async() => {
+    const val = inputRef.current?.value || "";
+    if (val.trim() === "") return;
+    const newComment: AddCommentReq = {
+      content: val.trim(),
+      imageUrls: [],
+      timestamp: comment.timestamp, // 获取当前视频时间
+      mediaId: +mediaId, // 将 mediaId 转换为数字
+      userId: +user.id,  // 将 user.id 转换为数字
+    }
+    await addCommentApi(newComment)
+    const comments = await getCommentListApi(+mediaId)
+    setComments(comments)
     inputRef.current!.value = "";
-    setImages([]);
     setShowInput(false);
   };
 
@@ -139,10 +129,14 @@ const CommentItem: FC<CommentItemProps> = ({
 
       <Box sx={{ mt: 1 }}>
         <Typography component="div" variant="caption" color="text.secondary">
-          {comment.createdAt}
+          {formatToMySQLDateTime(new Date(comment.createdAt))}
         </Typography>
         <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
-          <IconButton aria-label="comment" size="small" onClick={handleShowInput}>
+          <IconButton
+            aria-label="comment"
+            size="small"
+            onClick={handleShowInput}
+          >
             <ChatIcon />
           </IconButton>
           <IconButton aria-label="delete" size="small" onClick={handleDelete}>
@@ -169,7 +163,7 @@ const CommentItem: FC<CommentItemProps> = ({
                       id="upload-image"
                       type="file"
                       multiple
-                      onChange={handleImageUpload}
+                      // onChange={handleImageUpload}
                     />
                     <label htmlFor="upload-image">
                       <IconButton component="span">

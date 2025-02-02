@@ -19,12 +19,16 @@ export class MediaService {
   }
 
   async findAll(): Promise<Media[]> {
-    return await this.prisma.media.findMany();
+    return await this.prisma.media.findMany({
+      where: {
+        deletedAt: null,
+      },
+    });
   }
 
   async findOne(id: number): Promise<Media> {
     return await this.prisma.media.findFirstOrThrow({
-      where: { id },
+      where: { id, deletedAt: null },
     });
   }
 

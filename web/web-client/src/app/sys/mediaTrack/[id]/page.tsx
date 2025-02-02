@@ -8,7 +8,7 @@ import { useRef, useEffect } from "react";
 import Player from "xgplayer";
 import { useCommentStore } from '@/store/commentStore'
 import { mockComments } from '@/components/mock';
-import { getCommentList } from '@/api/comment';
+import { getCommentListApi } from '@/api/comment';
 import { useRequest } from 'ahooks';
 import { Comment } from '@/types/comment';
 import React from 'react';
@@ -17,26 +17,10 @@ const MediaTrackPage = () => {
   const params = useParams();
   const id = params.id as string;
   const { setComments, clearComments } = useCommentStore()
-  const { loading, run : getList } = useRequest(() => getCommentList(id), {
+  const { loading, run : getList } = useRequest(() => getCommentListApi(id), {
     manual: true,
     onSuccess: (data) => {
-      const comments: Comment[] = [];
-      data?.list?.forEach(item => {
-        const imageUrls = [
-          "https://avatars.githubusercontent.com/u/90611323"];
-        console.log(imageUrls);
-        comments.push({
-          id: item.id,
-          content: item.content,
-          timestamp: item.timestamp ?? 0,
-          username: item.user.name,
-          avatarUrl: item.user.avatarUrl,
-          images:  imageUrls,
-          createdAt: item.createdAt
-        });
-      });
-      console.log(comments);
-      setComments(comments);
+      setComments(data);
     },
   });
   const Init = () => {

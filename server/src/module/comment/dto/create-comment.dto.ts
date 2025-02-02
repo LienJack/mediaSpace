@@ -4,6 +4,7 @@ import {
   IsString,
   IsArray,
   IsNotEmpty,
+  isNumber,
 } from 'class-validator';
 
 export class CreateCommentDto {
@@ -13,14 +14,14 @@ export class CreateCommentDto {
   content!: string;
 
   @IsDefined()
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
-  userId!: string;
+  userId!: number;
 
   @IsDefined()
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
-  mediaId!: string;
+  mediaId!: number;
 
   @IsArray()
   @IsDefined()

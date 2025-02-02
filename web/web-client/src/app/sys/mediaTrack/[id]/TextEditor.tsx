@@ -24,31 +24,30 @@ import {
 } from '@mui/icons-material'
 import { useCommentStore } from '@/store/commentStore'
 import { usePlayerStore } from '@/store/playerStore'
+import useUserStore from '@/store/userStore'
 import { formatToMySQLDateTime } from '@/utils/time'
-
+import { addCommentApi, AddCommentReq, getCommentListApi } from '@/api/comment'
+import { Comment } from '@/types/comment'
+import { useParams } from 'next/navigation'
+import React from 'react'
 interface ImageFile {
   file: File
   preview: string
   progress: number
 }
 
-interface Comment {
-  id: number
-  content: string
-  images: string[]
-  timestamp: number
-  createdAt: string
-}
 
 export const TextEditor = () => {
+  const params = useParams();
+  const mediaId = Number(params.id);
   const [content, setContent] = useState('')
   const [images, setImages] = useState<ImageFile[]>([])
-  const [comments, setComments] = useState<Comment[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [openUploadDialog, setOpenUploadDialog] = useState(false)
-  const { addComment } = useCommentStore()
+  const { setComments } = useCommentStore()
   const { player } = usePlayerStore()
+  const { user } = useUserStore()
 
   // 工具栏按钮配置
   const toolbarButtons = [
@@ -130,21 +129,19 @@ export const TextEditor = () => {
   // 发送评论
   const handleSubmit = async () => {
     if (!content.trim() && images.length === 0) return
-    if (!player) return
-
-    const uploadedImageUrls = await uploadImages()
-    
-    const newComment: Comment = {
-      id: Math.floor(Math.random() * 900) + 100, // 生成100-999之间的随机数
+    if (!player) return 
+    const newComment: AddCommentReq = {
       content: content.trim(),
-      images: uploadedImageUrls,
-      timestamp: player.currentTime, // 获取当前视频时间
-      createdAt: formatToMySQLDateTime(new Date())
+      imageUrls: [],
+      timestamp: Math.round(player.currentTime), // 获取当前视频时间
+      mediaId: mediaId,
+      userId: +user.id,
     }
-
-    addComment(newComment)
+    await addCommentApi(newComment)
+    const comments = await getCommentListApi(mediaId)
     setContent('')
     setImages([])
+    setComments(comments)
   }
 
   return (

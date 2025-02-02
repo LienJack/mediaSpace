@@ -4,9 +4,9 @@ import ThemeRegistry from "@/components/ThemeRegistry";
 import { AppBar, Toolbar, Typography, Box, Avatar, IconButton } from "@mui/material";
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
-import useUserStore from "@/store/userStore";
-import React from 'react';
-
+import useUserStore, { User as UserStoreType } from "@/store/userStore";
+import React, { useEffect } from 'react';
+import { getUserInfo } from "@/api/user";
 const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
@@ -17,13 +17,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user } = useUserStore();
-
+  const { user, setUser } = useUserStore();
+  useEffect(() => {
+    getUserInfo('1').then((res) => {
+      const user: UserStoreType = {
+        name: res.name,
+        avatar: res.avatarUrl,
+        id: res.id,
+      };
+      setUser(user);
+    });
+  }, []);
   return (
     <html lang="zh" className={inter.className}>
       <body>
         <ThemeRegistry>
-          <AppBar position="fixed">
+          <AppBar position="fixed" color="primary">
             <Toolbar>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 好柒素材管理库

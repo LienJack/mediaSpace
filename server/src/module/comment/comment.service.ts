@@ -2,29 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, Comment } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CommentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createCommentDto: CreateCommentDto) {
-    const imageUrls = createCommentDto.imageUrls.join(',');
-    const userId = parseInt(createCommentDto.userId);
-    const mediaId = parseInt(createCommentDto.mediaId);
-    const newVal: Prisma.CommentCreateManyInput = {
-      ...createCommentDto,
-      imageUrls: imageUrls,
-      userId: userId,
-      mediaId: mediaId,
-    };
-    return this.prisma.comment.create({
-      data: newVal,
-    });
+    try {
+      const imageUrls = createCommentDto.imageUrls.join(',');
+      const userId = createCommentDto.userId;
+      const mediaId = createCommentDto.mediaId;
+      const newVal: Prisma.CommentCreateInput = {
+        content: createCommentDto.content,
+        imageUrls: imageUrls,
+        timestamp: createCommentDto.timestamp,
+        user: { connect: { id: userId } },
+        media: { connect: { id: mediaId } },
+      };
+      const res = await this.prisma.comment.create({
+        data: newVal,
+      });
+      return res;
+    } catch (error) {
+      throw new Error('发生错误：' + error);
+    }
   }
   async findOne(id: number) {
     const comment = await this.prisma.comment.findFirstOrThrow({
-      where: { id },
+      where: { id, deletedAt: null },
     });
     const val = {
       ...comment,
@@ -39,13 +45,9 @@ export class CommentService {
       ? updateCommentDto.imageUrls.join(',')
       : '';
     // 解析用户ID和媒体ID
-    const userId = updateCommentDto.userId
-      ? parseInt(updateCommentDto.userId)
-      : undefined;
+    const userId = updateCommentDto.userId;
 
-    const mediaId = updateCommentDto.mediaId
-      ? parseInt(updateCommentDto.mediaId)
-      : undefined;
+    const mediaId = updateCommentDto.mediaId;
 
     // 创建更新数据对象
     const newVal: Prisma.CommentUpdateInput = {
@@ -63,8 +65,9 @@ export class CommentService {
   }
 
   async remove(id: number) {
-    return await this.prisma.comment.delete({
+    return await this.prisma.comment.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -72,6 +75,7 @@ export class CommentService {
     const list = await this.prisma.comment.findMany({
       where: {
         mediaId: mediaId,
+        deletedAt: null,
       },
       include: {
         user: true,

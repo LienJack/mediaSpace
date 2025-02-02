@@ -1,6 +1,6 @@
 import axios from 'axios';
 // const baseUrl = 'http://127.0.0.1:4523/m1/5807700-5492742-default';
-const baseUrl = 'http://127.0.0.1:3000/api';
+const baseUrl = '/api';
 
 // 创建一个 Axios 实例
 const instance = axios.create({

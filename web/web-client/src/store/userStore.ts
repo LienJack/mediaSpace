@@ -1,8 +1,9 @@
 import { create} from 'zustand';
 
-interface User {
+export interface User {
     name: string;
     avatar: string;
+    id: number;
 }
 
 interface UserStore {
@@ -13,7 +14,8 @@ interface UserStore {
 const useUserStore = create<UserStore>((set) => ({
     user: {
         name: '',
-        avatar: 'https://mui.com/static/images/avatar/1.jpg',
+        avatar: '',
+        id: 1,
     },
     setUser: (user: User) => set({ user }),
 }));

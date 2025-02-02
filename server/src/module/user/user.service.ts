@@ -16,13 +16,24 @@ export class UserService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.prisma.user.findMany();
+    return this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+      },
+    });
   }
 
-  async findOne(id: string): Promise<User> {
-    return this.prisma.user.findFirstOrThrow({
-      where: { id: +id },
-    });
+  async findOne(id: number) {
+    return this.prisma.user
+      .findFirstOrThrow({
+        where: { id, deletedAt: null },
+      })
+      .then((res) => {
+        return {
+          ...res,
+          id: res.id.toString(),
+        };
+      });
   }
 
   update(id: number, updateUserDto: Prisma.UserUpdateInput) {

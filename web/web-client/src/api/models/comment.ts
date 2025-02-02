@@ -25,13 +25,13 @@ export interface Comment {
      * @type {string}
      * @memberof Comment
      */
-    id: string;
+    id: number;
     /**
      * 媒体的id
      * @type {string}
      * @memberof Comment
      */
-    mediaId: string;
+    mediaId: number;
     /**
      * 
      * @type {User}
