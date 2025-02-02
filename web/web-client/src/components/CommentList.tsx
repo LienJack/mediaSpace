@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,18 +9,17 @@ import { Comment } from '@/types/comment';
 import { formatTime } from '@/utils/time';
 import CommentItem from './CommentItem';
 import { useCommentStore } from '@/store/commentStore';
+import React from 'react';
 
 interface CommentGroupProps {
   timestamp: number;
   comments: Comment[];
-  onEditComment?: (comment: Comment) => void;
   onTimeClick?: (timestamp: number) => void;
 }
 
 const CommentGroup: FC<CommentGroupProps> = ({
   timestamp,
   comments,
-  onEditComment,
   onTimeClick,
 }) => {
   return (
@@ -46,7 +45,6 @@ const CommentGroup: FC<CommentGroupProps> = ({
           <CommentItem
             key={comment.id}
             comment={comment}
-            onEdit={onEditComment}
             onTimeClick={onTimeClick}
           />
         ))}
@@ -57,11 +55,10 @@ const CommentGroup: FC<CommentGroupProps> = ({
 
 interface CommentListProps {
   // comments: Comment[];
-  onEditComment?: (comment: Comment) => void;
   onTimeClick?: (timestamp: number) => void;
 }
 
-const CommentList: FC<CommentListProps> = ({ onEditComment, onTimeClick }) => {
+const CommentList: FC<CommentListProps> = ({  onTimeClick }) => {
   const { comments } = useCommentStore();
   // 按 timestamp 对评论进行分组
   if (!Array.isArray(comments)) return null;
@@ -86,7 +83,6 @@ const CommentList: FC<CommentListProps> = ({ onEditComment, onTimeClick }) => {
           key={timestamp}
           timestamp={timestamp}
           comments={groupedComments[timestamp]}
-          onEditComment={onEditComment}
           onTimeClick={onTimeClick}
         />
       ))}

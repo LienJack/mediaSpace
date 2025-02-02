@@ -35,7 +35,7 @@ export default function RootLayout({
           <AppBar position="fixed" color="primary">
             <Toolbar>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                好柒素材管理库
+                素材管理库
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
                 <IconButton aria-label="通知" sx={{ color: 'white' }}>

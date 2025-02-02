@@ -22,9 +22,16 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ChatIcon from "@mui/icons-material/Chat";
 import { AddPhotoAlternate } from "@mui/icons-material";
 import useUserStore from "@/store/userStore";
-import { addCommentApi, AddCommentReq, delCommentApi, getCommentListApi } from "@/api/comment";
+import {
+  addCommentApi,
+  AddCommentReq,
+  delCommentApi,
+  getCommentListApi,
+} from "@/api/comment";
 import { useParams } from "next/navigation";
 import React from "react";
+import { ImageFile } from "@/components/ImageUpdate";
+import { UpdateFileApi } from "@/api/file";
 
 interface CommentItemProps {
   comment: Comment;
@@ -34,12 +41,11 @@ interface CommentItemProps {
 
 const CommentItem: FC<CommentItemProps> = ({
   comment,
-  onEdit,
   onTimeClick,
 }) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [showInput, setShowInput] = useState(false);
-  const { removeComment, setComments } = useCommentStore();
+  const { setComments } = useCommentStore();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { user } = useUserStore();
   const params = useParams();
@@ -70,23 +76,6 @@ const CommentItem: FC<CommentItemProps> = ({
     setShowInput((prev) => !prev);
   };
 
-  const handleSendComment = async() => {
-    const val = inputRef.current?.value || "";
-    if (val.trim() === "") return;
-    const newComment: AddCommentReq = {
-      content: val.trim(),
-      imageUrls: [],
-      timestamp: comment.timestamp, // 获取当前视频时间
-      mediaId: +mediaId, // 将 mediaId 转换为数字
-      userId: +user.id,  // 将 user.id 转换为数字
-    }
-    await addCommentApi(newComment)
-    const comments = await getCommentListApi(+mediaId)
-    setComments(comments)
-    inputRef.current!.value = "";
-    setShowInput(false);
-  };
-
   const Primary = () => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Typography
@@ -109,8 +98,29 @@ const CommentItem: FC<CommentItemProps> = ({
       </Typography>
     </Box>
   );
-
-  const Secondary = () => (
+  const Secondary = () => {
+    const [ inputValue, setInputValue ] = useState("");
+    const [ImageList, setImageList] = useState<string[]>([]);
+    const handleDeleteImage = (index: number) => {
+      setImageList((prev) => prev.filter((_, i) => i !== index));
+    };
+    const handleSendComment = async () => {
+      const val = inputValue;
+      if (val.trim() === "") return;
+      const newComment: AddCommentReq = {
+        content: val.trim(),
+        imageUrls: ImageList,
+        timestamp: comment.timestamp, // 获取当前视频时间
+        mediaId: +mediaId, // 将 mediaId 转换为数字
+        userId: +user.id, // 将 user.id 转换为数字
+      };
+      await addCommentApi(newComment);
+      const comments = await getCommentListApi(+mediaId);
+      setComments(comments);
+      setInputValue("");
+      setShowInput(false);
+    };
+    return (
     <Box>
       <Typography
         component="div"
@@ -123,7 +133,7 @@ const CommentItem: FC<CommentItemProps> = ({
 
       {comment.images && comment.images.length > 0 && (
         <Box sx={{ mt: 1, mb: 1 }}>
-          <ImagePreview images={comment.images} />
+          <ImagePreview cols={3} width="200px" images={comment.images} />
         </Box>
       )}
 
@@ -146,38 +156,44 @@ const CommentItem: FC<CommentItemProps> = ({
       </Box>
 
       {showInput && (
-        <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-          <TextField
-            variant="outlined"
-            size="small"
-            fullWidth
-            placeholder="输入评论..."
-            inputRef={inputRef}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <input
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      id="upload-image"
-                      type="file"
-                      multiple
-                      // onChange={handleImageUpload}
-                    />
-                    <label htmlFor="upload-image">
-                      <IconButton component="span">
-                        <AddPhotoAlternate />
-                      </IconButton>
-                    </label>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <Button variant="outlined" size="small" onClick={handleSendComment}>
-            发送
-          </Button>
+        <Box>
+          <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+            <TextField
+              variant="outlined"
+              size="small"
+              fullWidth
+              placeholder="输入评论..."
+              // inputRef={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
+            <input
+              type="file"
+              id="upload-image"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const formData = new FormData();
+                  formData.append("file", file);
+                  const imageUrl = await UpdateFileApi(formData);
+                  setImageList((prev) => [...prev, imageUrl]); // 更新 ImageList
+                }
+              }}
+            />
+            <label htmlFor="upload-image">
+              <IconButton component="span">
+                <AddPhotoAlternate />
+              </IconButton>
+            </label>
+            <Button variant="outlined" size="small" onClick={handleSendComment}>
+              发送
+            </Button>
+          </Box>
+          <Box>
+            <ImagePreview cols={3} width="200px" images={ImageList} handleDelete={handleDeleteImage} />
+          </Box>
         </Box>
       )}
 
@@ -191,7 +207,7 @@ const CommentItem: FC<CommentItemProps> = ({
         </DialogActions>
       </Dialog>
     </Box>
-  );
+  )};
 
   return (
     <ListItem

@@ -43,3 +43,27 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf # 挂载 Nginx 配置文件
+  alist:
+    image: xhofe/alist:latest
+    container_name: alist
+    volumes:
+      - ../alist/data:/opt/alist/data  # alist数据目录
+      - ../alist/mnt:/mnt  # 存储目录，这里将作为挂载位置
+    ports:
+      - "5244:5244"
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Asia/Shanghai
+      # - DB_TYPE=mysql  # 使用MySQL数据库
+      # - DB_HOST=mysql  # MySQL主机名
+      # - DB_PORT=3307   # MySQL端口
+      # - DB_NAME=alist  # 数据库名称
+      # - DB_USER=root  # MySQL用户名
+      # - DB_PASS=root  # MySQL密码
+      # - DB_TABLE_PREFIX=alist_  # 数据库表前缀
+      - ALIST_ADMIN_USER=admin
+      - ALIST_ADMIN_PASSWORD=admin
+    depends_on:
+      - mysql
+    restart: always

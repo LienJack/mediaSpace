@@ -1,148 +1,69 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react'
-import { 
-  TextField, 
+import { useState, useCallback } from "react";
+import {
+  TextField,
   Button,
   Box,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
-} from '@mui/material'
-import { 
+} from "@mui/material";
+import {
   Close as CloseIcon,
-  Undo as UndoIcon,
-  Redo as RedoIcon,
   AttachFile as AttachFileIcon,
-  Fullscreen as FullscreenIcon,
-  MinimizeOutlined as MinimizeIcon,
-  TextFields as TextFieldsIcon,
-  AlternateEmail as AtIcon,
-  Link as LinkIcon,
-  EmojiEmotions as EmojiIcon,
-  Send as SendIcon
-} from '@mui/icons-material'
-import { useCommentStore } from '@/store/commentStore'
-import { usePlayerStore } from '@/store/playerStore'
-import useUserStore from '@/store/userStore'
-import { formatToMySQLDateTime } from '@/utils/time'
-import { addCommentApi, AddCommentReq, getCommentListApi } from '@/api/comment'
-import { Comment } from '@/types/comment'
-import { useParams } from 'next/navigation'
-import React from 'react'
-interface ImageFile {
-  file: File
-  preview: string
-  progress: number
-}
-
-
+  Send as SendIcon,
+} from "@mui/icons-material";
+import { useCommentStore } from "@/store/commentStore";
+import { usePlayerStore } from "@/store/playerStore";
+import useUserStore from "@/store/userStore";
+import { addCommentApi, AddCommentReq, getCommentListApi } from "@/api/comment";
+import { useParams } from "next/navigation";
+import { ImageUpdate } from "@/components/ImageUpdate";
+import ImagePreview from "@/components/ImagePreview";
+import { ImageFile } from "@/components/ImageUpdate";
 export const TextEditor = () => {
+  // 状态管理
   const params = useParams();
   const mediaId = Number(params.id);
-  const [content, setContent] = useState('')
-  const [images, setImages] = useState<ImageFile[]>([])
-  const [isDragging, setIsDragging] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [openUploadDialog, setOpenUploadDialog] = useState(false)
-  const { setComments } = useCommentStore()
-  const { player } = usePlayerStore()
-  const { user } = useUserStore()
+  const [content, setContent] = useState("");
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [openUploadDialog, setOpenUploadDialog] = useState(false);
 
-  // 工具栏按钮配置
+  // Store hooks
+  const { setComments } = useCommentStore();
+  const { player } = usePlayerStore();
+  const { user } = useUserStore();
+
+  // 工具栏配置
   const toolbarButtons = [
-    { icon: <CloseIcon />, label: '关闭', onClick: () => {} },
-    // { icon: <UndoIcon />, label: '撤销', onClick: () => {} },
-    // { icon: <RedoIcon />, label: '重做', onClick: () => {} },
-    { icon: <AttachFileIcon />, label: '附件', onClick: () => setOpenUploadDialog(true) },
-    // { icon: <FullscreenIcon />, label: '全屏', onClick: () => {} },
-    // { icon: <AtIcon />, label: '@功能', onClick: () => {} },
-    // { icon: <LinkIcon />, label: '链接', onClick: () => {} },
-    // { icon: <EmojiIcon />, label: '表情', onClick: () => {} }
-  ]
-
-  // 处理文件选择
-  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files)
-      addNewImages(newFiles)
-    }
-  }
-
-  // 处理拖拽
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-    
-    const files = Array.from(event.dataTransfer.files)
-    addNewImages(files)
-  }
-
-  // 添加新图片
-  const addNewImages = (files: File[]) => {
-    const imageFiles = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-      progress: 0
-    }))
-    setImages(prev => [...prev, ...imageFiles])
-  }
-
-  // 删除图片
-  const handleRemoveImage = (index: number) => {
-    setImages(prev => {
-      const newImages = [...prev]
-      URL.revokeObjectURL(newImages[index].preview)
-      newImages.splice(index, 1)
-      return newImages
-    })
-  }
-
-  // 模拟上传图片
-  const uploadImages = async () => {
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i]
-      // 模拟上传进度
-      for (let progress = 0; progress <= 100; progress += 10) {
-        setImages(prev => {
-          const newImages = [...prev]
-          newImages[i] = { ...newImages[i], progress }
-          return newImages
-        })
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
-    }
-    // 返回模拟的图片URL数组
-    return images.map(img => img.preview)
-  }
+    {
+      icon: <CloseIcon />,
+      label: "关闭",
+      onClick: () => {},
+    },
+    {
+      icon: <AttachFileIcon />,
+      label: "附件",
+      onClick: () => setOpenUploadDialog(true),
+    },
+  ];
 
   // 发送评论
   const handleSubmit = async () => {
-    if (!content.trim() && images.length === 0) return
-    if (!player) return 
+    if (!content.trim() && images.length === 0) return;
+    if (!player) return;
+
     const newComment: AddCommentReq = {
       content: content.trim(),
-      imageUrls: [],
-      timestamp: Math.round(player.currentTime), // 获取当前视频时间
+      imageUrls: images.map(img => img.rawUrl),
+      timestamp: Math.round(player.currentTime),
       mediaId: mediaId,
       userId: +user.id,
-    }
-    await addCommentApi(newComment)
-    const comments = await getCommentListApi(mediaId)
-    setContent('')
-    setImages([])
-    setComments(comments)
-  }
+    };
+
+    await addCommentApi(newComment);
+    const comments = await getCommentListApi(mediaId);
+    setContent("");
+    setImages([]);
+    setComments(comments);
+  };
 
   return (
     <div>
@@ -158,7 +79,6 @@ export const TextEditor = () => {
         className="p-4"
         InputProps={{
           disableUnderline: true,
-        //   style: { height: 150 },
         }}
       />
 
@@ -176,7 +96,7 @@ export const TextEditor = () => {
             </IconButton>
           ))}
         </Box>
-        
+
         <Button
           variant="contained"
           size="small"
@@ -189,72 +109,18 @@ export const TextEditor = () => {
         </Button>
       </Box>
 
-      {/* 图片上传弹框 */}
-      <Dialog 
-        open={openUploadDialog} 
+      {/* 上传图片展示 */}
+      { !openUploadDialog && images.length > 0 && <ImagePreview images={images.map(img => img.rawUrl)} width="100%" cols={6} /> }
+
+      {/* 图片上传对话框 */}
+      <ImageUpdate
+        open={openUploadDialog}
         onClose={() => setOpenUploadDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>上传图片</DialogTitle>
-        <DialogContent>
-          <Box
-            className="border-2 border-dashed p-8 text-center cursor-pointer hover:border-blue-500"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-            />
-            <AttachFileIcon className="text-4xl mb-2" />
-            <div>点击或拖拽图片到此处上传</div>
-          </Box>
-
-          {/* 图片预览区域 */}
-          {images.length > 0 && (
-            <Box className="grid grid-cols-3 gap-4 mt-4">
-              {images.map((image, index) => (
-                <Box key={index} className="relative">
-                  <img
-                    src={image.preview}
-                    alt={`预览图 ${index + 1}`}
-                    className="w-full h-24 object-cover rounded"
-                  />
-                  <IconButton
-                    size="small"
-                    className="absolute top-1 right-1 bg-white/80 hover:bg-white"
-                    onClick={() => handleRemoveImage(index)}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenUploadDialog(false)}>取消</Button>
-          <Button 
-            variant="contained" 
-            onClick={() => {
-              handleSubmit()
-              setOpenUploadDialog(false)
-            }}
-            disabled={images.length === 0}
-          >
-            确认上传
-          </Button>
-        </DialogActions>
-      </Dialog>
+        images={images}
+        setImages={setImages}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default TextEditor
+export default TextEditor;

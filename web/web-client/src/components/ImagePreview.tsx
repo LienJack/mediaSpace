@@ -1,21 +1,30 @@
-import { FC, useState } from 'react';
+import { FC, useState } from "react";
 // import Image from 'next/image';
-import { 
+import {
   Dialog,
   DialogContent,
   ImageList,
   ImageListItem,
   IconButton,
-} from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface ImagePreviewProps {
   images: string[];
+  width?: string;
+  cols?: number;
+  handleDelete?: (index: number) => void;
 }
 
-const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
+const ImagePreview: FC<ImagePreviewProps> = ({
+  images,
+  width = "200px",
+  cols = 3,
+  handleDelete,
+}) => {
   const [open, setOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedImage, setSelectedImage] = useState("");
 
   const handleImageClick = (image: string) => {
     setSelectedImage(image);
@@ -24,13 +33,13 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
 
   return (
     <>
-      <ImageList sx={{ width: '100%', maxWidth: 200 }} cols={3} rowHeight={50}>
+      <ImageList sx={{ width }} cols={cols} rowHeight={50}>
         {images.map((image, index) => (
-          <ImageListItem 
+          <ImageListItem
             key={index}
-            sx={{ 
-              cursor: 'pointer',
-              '&:hover': { opacity: 0.8 }
+            sx={{
+              cursor: "pointer",
+              "&:hover": { opacity: 0.8 },
             }}
             onClick={() => handleImageClick(image)}
           >
@@ -38,8 +47,17 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
               src={image}
               alt={`评论图片 ${index + 1}`}
               sizes="100px"
-              style={{ objectFit: 'cover' }}
+              style={{ objectFit: "cover" }}
             />
+            {handleDelete && (
+              <IconButton
+                sx={{ position: "absolute", top: -8, right: -10 }}
+                onClick={(e) => { e.stopPropagation(); handleDelete(index); }}
+                color="error"
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
           </ImageListItem>
         ))}
       </ImageList>
@@ -52,21 +70,20 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
       >
         <IconButton
           sx={{
-            position: 'absolute',
+            position: "absolute",
             right: 8,
             top: 8,
-            color: 'white'
+            color: "white",
           }}
           onClick={() => setOpen(false)}
         >
           <CloseIcon />
         </IconButton>
-        <DialogContent sx={{ p: 0, position: 'relative', height: '90vh' }}>
+        <DialogContent sx={{ p: 0, position: "relative", height: "70vh" }}>
           <img
             src={selectedImage}
             alt="预览图片"
-            sizes="100vw"
-            style={{ objectFit: 'contain' }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </DialogContent>
       </Dialog>
@@ -74,4 +91,4 @@ const ImagePreview: FC<ImagePreviewProps> = ({ images }) => {
   );
 };
 
-export default ImagePreview; 
+export default ImagePreview;

@@ -34,7 +34,7 @@ export default function RightPage({ loading }: RightPageProps) {
   return (
     <Paper
       sx={{
-        width: "550px",
+        width: "500px",
         height: "100%",
         display: "flex",
         flexDirection: "column",
