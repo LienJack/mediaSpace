@@ -14,6 +14,10 @@ export class Media {
     @IsString()
     path!: string;
 
+    @IsDefined()
+    @IsInt()
+    type!: number;
+
     @IsOptional()
     @IsString()
     descript?: string;

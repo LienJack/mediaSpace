@@ -1,14 +1,15 @@
 import { Comment } from '@/types/comment';
-import React from 'react';
+// import React from 'react';
 import request from './base';
-// import { Comment } from './models/comment';
+import { CommentRes } from './models/comment';
+import { Response } from './models/base';
 const baseUrl = '/v1/comment';
 
 export const getCommentListApi = async (id: number): Promise<Comment[]> => {
     try {
-        const response = await request.get(`${baseUrl}/media/${id}`);
+        const response = await request.get(`${baseUrl}/media/${id}`) as Response<{ list: CommentRes[] }>;
         const comments: Comment[] = [];
-        response.data?.list?.forEach(item => {
+        response.data?.list?.forEach((item) => {
             comments.push({
                 id: item.id,
                 content: item.content,
@@ -16,7 +17,7 @@ export const getCommentListApi = async (id: number): Promise<Comment[]> => {
                 username: item.user.name,
                 avatarUrl: item.user.avatarUrl,
                 images: item.imageUrls || [],
-                createdAt: item.createdAt,
+                createdAt: item.createdAt ?? '',
             });
         });
         return comments; // 从响应中提取 data 属性

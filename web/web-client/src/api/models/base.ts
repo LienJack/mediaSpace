@@ -38,5 +38,16 @@ export interface Base {
      */
     deletedAt: string;
 }
+export interface Response<T> {
+    /**
+     * 200 默认成功
+     */
+    code: number;
+    data: T;
+    /**
+     * 错误说明
+     */
+    msg: string;
+}
 
 

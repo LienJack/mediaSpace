@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/prisma/client"
 }
 
 generator nestjsDto {
@@ -31,10 +30,12 @@ model Comment {
   @@index([userId], map: "Comment_userId_idx")
 }
 
+
 model Media {
   id        Int       @id @default(autoincrement())
   name      String
   path      String
+  type      Int       @default(1) @db.TinyInt // 1: local, 2: url
   descript  String?   @db.Text
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt

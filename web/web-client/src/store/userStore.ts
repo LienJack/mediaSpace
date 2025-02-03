@@ -1,10 +1,5 @@
 import { create} from 'zustand';
-
-export interface User {
-    name: string;
-    avatar: string;
-    id: number;
-}
+import { User } from '@/types/user';
 
 interface UserStore {
     user: User;
@@ -14,8 +9,9 @@ interface UserStore {
 const useUserStore = create<UserStore>((set) => ({
     user: {
         name: '',
-        avatar: '',
-        id: 1,
+        account: '',
+        avatarUrl: '',
+        id: 0,
     },
     setUser: (user: User) => set({ user }),
 }));

@@ -4,12 +4,14 @@ import {
   Typography,
   List,
   Card,
+  IconButton,
 } from '@mui/material';
 import { Comment } from '@/types/comment';
 import { formatTime } from '@/utils/time';
 import CommentItem from './CommentItem';
 import { useCommentStore } from '@/store/commentStore';
 import React from 'react';
+import NoCommentsIcon from '@mui/icons-material/CommentOutlined';
 
 interface CommentGroupProps {
   timestamp: number;
@@ -58,8 +60,9 @@ interface CommentListProps {
   onTimeClick?: (timestamp: number) => void;
 }
 
-const CommentList: FC<CommentListProps> = ({  onTimeClick }) => {
+const CommentList: FC<CommentListProps> = ({ onTimeClick }) => {
   const { comments } = useCommentStore();
+  
   // 按 timestamp 对评论进行分组
   if (!Array.isArray(comments)) return null;
   const groupedComments = comments?.reduce<Record<number, Comment[]>>((acc, comment) => {
@@ -78,14 +81,25 @@ const CommentList: FC<CommentListProps> = ({  onTimeClick }) => {
 
   return (
     <Box>
-      {sortedTimestamps.map((timestamp) => (
-        <CommentGroup
-          key={timestamp}
-          timestamp={timestamp}
-          comments={groupedComments[timestamp]}
-          onTimeClick={onTimeClick}
-        />
-      ))}
+      {sortedTimestamps.length === 0 ? (
+        <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" sx={{ mt: 4 }}>
+          <IconButton sx={{ fontSize: 250 }}>
+            <NoCommentsIcon />
+          </IconButton>
+          <Typography variant="h6" color="textSecondary">
+            暂无评论
+          </Typography>
+        </Box>
+      ) : (
+        sortedTimestamps.map((timestamp) => (
+          <CommentGroup
+            key={timestamp}
+            timestamp={timestamp}
+            comments={groupedComments[timestamp]}
+            onTimeClick={onTimeClick}
+          />
+        ))
+      )}
     </Box>
   );
 };

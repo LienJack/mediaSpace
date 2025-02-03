@@ -10,7 +10,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from '@/prisma/client';
+import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 @Controller('v1/user')
 export class UserController {

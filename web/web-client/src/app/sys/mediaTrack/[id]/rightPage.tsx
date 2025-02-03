@@ -28,7 +28,7 @@ export default function RightPage({ loading }: RightPageProps) {
   };
 
   const handleTimeClick = (timestamp: number) => {
-    seekTo(timestamp);
+    seekTo(timestamp)
   };
 
   return (

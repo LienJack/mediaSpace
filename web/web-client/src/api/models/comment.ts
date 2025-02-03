@@ -19,7 +19,7 @@ import { User } from './user';
  * @export
  * @interface Comment
  */
-export interface Comment {
+export interface CommentRes {
     /**
      * ID
      * @type {string}
@@ -73,13 +73,13 @@ export interface Comment {
      * @type {string}
      * @memberof Comment
      */
-    updatedAt: string;
+    updatedAt?: string;
     /**
      * 删除时间
      * @type {string}
      * @memberof Comment
      */
-    deletedAt: string;
+    deletedAt?: string;
 }
 
 

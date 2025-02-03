@@ -13,6 +13,7 @@ import { useRequest } from 'ahooks';
 import { Comment } from '@/types/comment';
 import React from 'react';
 import { LoginApi } from '@/api/file';
+import { getMediaApi } from '@/api/media';
 const MediaTrackPage = () => {
   const params = useParams();
   const id = params.id as string;
@@ -23,6 +24,7 @@ const MediaTrackPage = () => {
       setComments(data);
     },
   });
+  const { data: media } = useRequest(() => getMediaApi(Number(id)));
   const Init = () => {
     // 获取评论列表
     getList();
@@ -47,7 +49,7 @@ const MediaTrackPage = () => {
       }}
     >
       {/* 左侧区域 - 自适应宽度 */}
-      <LeftPage />
+      <LeftPage media={media} />
       {/* 右侧区域 - 固定宽度 */}
       <RightPage loading={loading} />
     </Stack>

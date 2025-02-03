@@ -18,7 +18,7 @@
  * @export
  * @interface Media
  */
-export interface Media {
+export interface MediaRes {
     /**
      * 
      * @type {number}
@@ -48,19 +48,26 @@ export interface Media {
      * @type {string}
      * @memberof Media
      */
-    createdAt: string;
+    createdAt?: string;
     /**
      * 更新时间
      * @type {string}
      * @memberof Media
      */
-    updatedAt: string;
+    updatedAt?: string;
     /**
      * 删除时间
      * @type {string}
      * @memberof Media
      */
-    deletedAt: string;
+    deletedAt?: string;
+    /**
+     * 类型
+     * @type {number}
+     * @memberof Media  
+     * 1: local, 2: url
+     */
+    type?: number;
 }
 
 

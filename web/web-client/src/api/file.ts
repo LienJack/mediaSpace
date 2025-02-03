@@ -1,6 +1,6 @@
 import axios from "axios";
-import { alistBaseUrl, fileBasePath } from "@/utils/env"
-import { FsGetRes, Response } from "./models/files";
+import { alistBaseUrl, fileImagePath } from "@/utils/env"
+import { ContentRes, FsGetRes, FsListReq, Response } from "./models/files";
 
 // 创建axios实例
 const instance = axios.create({
@@ -101,7 +101,7 @@ export const getFileDetail = async (filePath: string): Promise<Response<FsGetRes
 
 export const UpdateFileApi = async (formData: FormData, onUploadProgress?: (progressEvent: ProgressEvent) => void) => {
     const fileName = (formData.get("file") as File)?.name || "name";
-    const filePath = `${fileBasePath}/${Math.random().toString().substring(2, 5)}-${fileName}`;
+    const filePath = `${fileImagePath}/${Math.random().toString().substring(2, 5)}-${fileName}`;
 
     const config = {
         method: "put",
@@ -121,4 +121,9 @@ export const UpdateFileApi = async (formData: FormData, onUploadProgress?: (prog
     // const res = await getFileDetail(filePath);
     // return res.data.raw_url;
     return `/p${filePath}`;
+};
+// 列出文件目录
+export const getFileList = async (data: FsListReq): Promise<Response<FsListRes>> => {
+    const res = await instance.post(`/fs/list`, data);
+    return res.data;
 };

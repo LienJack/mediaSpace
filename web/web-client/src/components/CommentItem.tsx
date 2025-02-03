@@ -46,7 +46,6 @@ const CommentItem: FC<CommentItemProps> = ({
   const [openDialog, setOpenDialog] = useState(false);
   const [showInput, setShowInput] = useState(false);
   const { setComments } = useCommentStore();
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const { user } = useUserStore();
   const params = useParams();
   const mediaId = params.id as string;
@@ -112,7 +111,7 @@ const CommentItem: FC<CommentItemProps> = ({
         imageUrls: ImageList,
         timestamp: comment.timestamp, // 获取当前视频时间
         mediaId: +mediaId, // 将 mediaId 转换为数字
-        userId: +user.id, // 将 user.id 转换为数字
+        userId: user.id, // 将 user.id 转换为数字
       };
       await addCommentApi(newComment);
       const comments = await getCommentListApi(+mediaId);

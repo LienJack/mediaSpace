@@ -2,7 +2,8 @@ import {
   IsDefined,
   IsString,
   IsNotEmpty,
-  IsOptional, // 添加 IsNotEmpty 导入
+  IsOptional,
+  IsInt, // 添加 IsNotEmpty 导入
 } from 'class-validator'; // 移除未使用的 IsInt, IsDate, IsOptional 导入
 
 export class CreateMediaDto {
@@ -19,4 +20,8 @@ export class CreateMediaDto {
   @IsOptional()
   @IsString()
   descript?: string;
+
+  @IsOptional()
+  @IsInt()
+  type?: number;
 }

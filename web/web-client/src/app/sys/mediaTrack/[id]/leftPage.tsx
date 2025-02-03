@@ -6,15 +6,30 @@ import Video from "@/components/Video";
 import Player from "xgplayer";
 import { usePlayerStore } from "@/store/playerStore";
 import TextEditor from "@/app/sys/mediaTrack/[id]/TextEditor";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCommentStore } from "@/store/commentStore";
-import { VideoProps } from "@/components/Video";
 import { ProgressDot } from "@/components/Video";
+import { Media } from "@/types/media";
+import { getFileDetail } from '@/api/file'
 
-export default function LeftPage() {
+export default function LeftPage({ media }: { media?: Media }) {
   const setPlayer = usePlayerStore((state) => state.setPlayer);
   const removePlayer = usePlayerStore((state) => state.removePlayer);
   const [progressDot, setProgressDot] = useState<ProgressDot[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  useEffect(() => {
+    if (!media) return;
+    if (media.type === 1) {
+      getFileDetail(media.path).then((res) => {
+        if (res.data?.raw_url) {
+          setVideoUrl(res.data?.raw_url);
+        }
+      });
+    } 
+    if (media.type === 2) {
+      setVideoUrl(media.path);
+    }
+  }, [media]);
   const handlePlayerReady = useCallback(
     (player: Player) => {
       // 确保只在播放器实例真正改变时才更新
@@ -24,7 +39,6 @@ export default function LeftPage() {
     },
     [setPlayer]
   );
-
   // 组件卸载时清理播放器实例
   useEffect(() => {
     return () => {
@@ -32,8 +46,6 @@ export default function LeftPage() {
     };
   }, [setPlayer, removePlayer]);
 
-  const mockUrl =
-    "http://192.168.5.89:5244/p/nas/video/yoasobi/32763_1731251147.mp4?sign=iUHNb2ldZhHAlh_wz0nYOkUlJz0oWkuJWhN-bc1hwtw=:0";
   const { comments } = useCommentStore();
     // 转换 comments 为 progressDot
   useEffect(() => {
@@ -78,7 +90,7 @@ export default function LeftPage() {
          justifyContent: 'center',
         }}>
           <Video
-            url={mockUrl} // 假设这是视频 API 地址
+            url={videoUrl} // 假设这是视频 API 地址
             width='100%'
             progressDots={progressDot}
             onPlayerReady={handlePlayerReady}

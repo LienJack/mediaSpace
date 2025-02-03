@@ -18,7 +18,18 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         player.seek(time)
         setTimeout(()=>{
           player.pause()
-        },10)
+        },100)
+        // 等待视频加载
+        setTimeout(()=>{
+          if(!player.paused){
+            player.pause()
+          }
+        },500)
+        setTimeout(()=>{
+          if(!player.paused){
+            player.pause()
+          }
+        },1000)
       }
       return state
     })

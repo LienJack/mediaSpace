@@ -55,7 +55,7 @@ export const TextEditor = () => {
       imageUrls: images.map(img => img.rawUrl),
       timestamp: Math.round(player.currentTime),
       mediaId: mediaId,
-      userId: +user.id,
+      userId: user.id,
     };
 
     await addCommentApi(newComment);
