@@ -10,7 +10,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from '@prisma/client';
+import { User } from '@/prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 @Controller('v1/user')
 export class UserController {
@@ -29,7 +29,7 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(id);
+    return this.userService.findOne(+id);
   }
   @Post('delete/:id')
   remove(@Param('id') id: string) {

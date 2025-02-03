@@ -3,7 +3,7 @@ import { CreateMediaDto } from './dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Media } from 'prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/prisma/client';
 
 @Injectable()
 export class MediaService {

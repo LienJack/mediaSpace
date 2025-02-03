@@ -73,7 +73,7 @@ const ImagePreview: FC<ImagePreviewProps> = ({
             position: "absolute",
             right: 8,
             top: 8,
-            color: "white",
+            zIndex: 1000,
           }}
           onClick={() => setOpen(false)}
         >
@@ -83,7 +83,7 @@ const ImagePreview: FC<ImagePreviewProps> = ({
           <img
             src={selectedImage}
             alt="预览图片"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ height: "100%", objectFit: "contain" }}
           />
         </DialogContent>
       </Dialog>

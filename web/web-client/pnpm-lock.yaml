@@ -29,6 +29,9 @@ dependencies:
   '@types/video.js':
     specifier: ^7.3.58
     version: 7.3.58
+  Unstable_Grid2:
+    specifier: link:@mui/material/Unstable_Grid2
+    version: link:@mui/material/Unstable_Grid2
   ahooks:
     specifier: ^3.8.4
     version: 3.8.4(react@19.0.0)

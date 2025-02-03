@@ -17,6 +17,7 @@
     "@mui/material": "^6.4.1",
     "@types/react-window": "^1.8.8",
     "@types/video.js": "^7.3.58",
+    "Unstable_Grid2": "link:@mui/material/Unstable_Grid2",
     "ahooks": "^3.8.4",
     "axios": "^1.7.9",
     "http-proxy-middleware": "^3.0.3",

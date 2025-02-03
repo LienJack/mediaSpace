@@ -63,6 +63,7 @@ export default function LeftPage() {
         flexGrow: 1, // 自动填充剩余空间
         p: 2,
         minWidth: "200px", // 最小宽度
+        width: "70%",
         height: "100%",
         overflow: 'auto',
       }}
@@ -95,7 +96,7 @@ export default function LeftPage() {
             overflowY: "auto",
           }}
         >
-          <TextEditor />
+          <TextEditor/>
         </Box>
       </Stack>
     </Paper>

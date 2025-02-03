@@ -5,3 +5,7 @@
 # 主题配色
 
 [主题配色](https://mui.com/material-ui/customization/dark-mode/)
+
+# 命令
+docker-compose up -d   
+docker-compose down
