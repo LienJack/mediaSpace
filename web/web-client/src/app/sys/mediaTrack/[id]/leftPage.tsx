@@ -1,8 +1,8 @@
 "use client";
 
-import { Box, Paper, Stack } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import Video from "@/components/Video";
-import Player from "xgplayer";
+import ReactPlayer from "react-player";
 import { usePlayerStore } from "@/store/playerStore";
 import TextEditor from "@/app/sys/mediaTrack/[id]/TextEditor";
 import { useCallback, useEffect, useState } from "react";
@@ -21,7 +21,7 @@ export default function LeftPage({ media }: { media?: Media }) {
   const [progressDot, setProgressDot] = useState<CommentProgressDot[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
   const { comments } = useCommentStore();
-  const [ videoHeight] = useState<string>('calc(100vh - 350px)');
+  const [videoHeight] = useState<string>('calc(100vh - 220px)');
 
   // 获取视频URL
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function LeftPage({ media }: { media?: Media }) {
 
   // 处理播放器准备就绪
   const handlePlayerReady = useCallback(
-    (player: Player) => {
+    (player: ReactPlayer) => {
       if (player) {
         setPlayer(player);
       }
@@ -60,11 +60,14 @@ export default function LeftPage({ media }: { media?: Media }) {
   // 转换评论为进度点
   useEffect(() => {
     if (progressDot.length > 0) return;
-    let id = 100
+    let id = 100;
     const newProgressDots = comments.map((comment) => ({
-      id: comment.id?.toString() || `${id++}`, // 确保id为string类型
+      id: comment.id?.toString() || `${id++}`,
       time: comment.timestamp,
       text: comment.username,
+      avatar: comment.avatarUrl,
+      comment: comment.content,
+      images: comment.imageUrls,
     }));
 
     setProgressDot(newProgressDots);
@@ -78,37 +81,56 @@ export default function LeftPage({ media }: { media?: Media }) {
         minWidth: "200px",
         width: "70%",
         height: "100%",
-        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      <Stack direction="column" spacing={2}>
+      <Box 
+        sx={{
+          flex: '1 0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          mb: 2,
+        }}
+      >
         <Box sx={{
-          padding: '0 100px',
-          justifyContent: 'center',
+          padding: '0 20px',
           height: videoHeight,
           margin: '0 auto',
+          width: '100%',
         }}>
           <Video
             url={videoUrl}
-            height={videoHeight}
+            height="100%"
+            timeThreshold={5}
+            minDotDistance={10}
             progressDots={progressDot}
             onPlayerReady={handlePlayerReady}
           />
         </Box>
+      </Box>
 
+      <Box
+        sx={{
+          flex: '0 0 120px',
+          bgcolor: "background.default",
+          borderRadius: 1,
+          border: "1px solid #e0e0e0",
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <Box
           sx={{
-            minHeight: "150px",
-            bgcolor: "background.default",
+            flex: 1,
+            overflowY: 'auto',
             p: 2,
-            borderRadius: 1,
-            border: "1px solid #e0e0e0",
-            overflowY: "auto",
           }}
         >
           <TextEditor />
         </Box>
-      </Stack>
+      </Box>
     </Paper>
   );
 }

@@ -61,7 +61,7 @@ export const TextEditor = () => {
     const newComment: AddCommentReq = {
       content: content.trim(),
       imageUrls: images.map(img => img.rawUrl),
-      timestamp: Math.round(player.currentTime),
+      timestamp: Math.round(player.getCurrentTime()),
       mediaId: mediaId,
       userId: user.id,
     };
