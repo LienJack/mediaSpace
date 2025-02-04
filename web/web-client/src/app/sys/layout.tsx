@@ -1,5 +1,4 @@
 "use client";
-import { Inter } from "next/font/google";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import { AppBar, Toolbar, Typography, Box, Avatar, IconButton, Button, Menu, MenuItem } from "@mui/material";
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -9,10 +8,7 @@ import useUserStore from '@/store/userStore';
 import { User } from '@/types/user';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-const inter = Inter({
-  subsets: ["latin"],
-  display: 'swap',
-});
+
 
 export default function RootLayout({
   children,

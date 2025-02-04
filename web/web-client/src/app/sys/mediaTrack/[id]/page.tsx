@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { Stack, IconButton, CircularProgress } from '@mui/material';
 import { useEffect, useState } from "react";
 import { useCommentStore } from '@/store/commentStore';
@@ -20,7 +20,6 @@ import { toast } from 'react-hot-toast';
  * @returns {JSX.Element} 媒体轨道页面组件
  */
 const MediaTrackPage = () => {
-  const router = useRouter();
   // 获取路由参数中的媒体ID
   const { id } = useParams<{ id: string }>();
   const mediaId = Number(id);
@@ -79,8 +78,7 @@ const MediaTrackPage = () => {
 
   // 错误处理
   if (mediaError || !mediaData) {
-    notFound();
-    return null;
+    return notFound();
   }
 
   return (
