@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, KeyboardEvent } from "react";
 import {
   TextField,
   Button,
@@ -73,6 +73,21 @@ export const TextEditor = () => {
     setComments(comments);
   };
 
+  // 处理键盘事件
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      // 使用 metaKey (Mac的Command键) 或 ctrlKey (Windows的Control键)
+      if (e.metaKey || e.ctrlKey) {
+        // Command/Control + Enter: 插入换行
+        setContent(prev => prev + '\n');
+      } else {
+        // 仅 Enter: 提交
+        e.preventDefault();
+        handleSubmit();
+      }
+    }
+  };
+
   return (
     <div className="relative">
       {/* 拖拽区域 */}
@@ -98,16 +113,29 @@ export const TextEditor = () => {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onPaste={handlePaste}
-          placeholder="写下你的评论..."
+          onKeyDown={handleKeyDown}
+          placeholder="写下你的评论...(回车发送，Command/Ctrl+回车换行)"
           variant="standard"
           className="p-4"
-          InputProps={{
-            disableUnderline: true,
+          sx={{
+            '& .MuiInput-underline:before': { borderBottom: 'none' },
+            '& .MuiInput-underline:after': { borderBottom: 'none' },
+            '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottom: 'none' }
           }}
         />
+        <Button
+            variant="contained"
+            size="small"
+            endIcon={<SendIcon />}
+            onClick={handleSubmit}
+            disabled={!content.trim()}
+            className="ml-2"
+          >
+            发送
+        </Button>
 
         {/* 工具栏 */}
-        <Box className="flex items-center justify-between border-t p-2">
+        {/* <Box className="flex items-center justify-between border-t p-2">
           <Box className="flex gap-1">
             <IconButton
               size="small"
@@ -139,7 +167,7 @@ export const TextEditor = () => {
           >
             发送
           </Button>
-        </Box>
+        </Box> */}
 
         {/* 上传图片展示 */}
         {images.length > 0 && (

@@ -19,7 +19,6 @@ import ImagePreview from "@/components/ImagePreview";
 import { useCommentStore } from "@/store/commentStore";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ChatIcon from "@mui/icons-material/Chat";
-// import { AddPhotoAlternate } from "@mui/icons-material";
 import useUserStore from "@/store/userStore";
 import {
   addCommentApi,
@@ -30,7 +29,7 @@ import {
 import { useParams } from "next/navigation";
 import { ImageFile } from "@/components/ImageUpdate";
 import { useImageUpload } from "@/hooks/useImageUpload";
-
+import { formatToMySQLDateTime } from "@/utils/time";
 interface CommentItemProps {
   comment: Comment;
   onTimeClick?: (timestamp: number) => void;
@@ -42,7 +41,7 @@ interface ReplyInputProps {
 }
 
 const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
-  const [replyContent, setReplyContent] = useState("");
+  const [replyContent, setReplyContent] = useState<string>("");
   const [replyImages, setReplyImages] = useState<ImageFile[]>([]);
 
   // 使用图片上传Hook
@@ -90,16 +89,13 @@ const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             onPaste={handlePaste}
-          />
-          {/* <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              dropzoneProps.getRootProps().onClick?.(e);
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
             }}
-            size="small"
-          >
-            <AddPhotoAlternate />
-          </IconButton> */}
+          />
           <Button 
             variant="outlined" 
             size="small" 
@@ -233,6 +229,15 @@ const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
       >
         {comment.content}
       </Typography>
+      { comment.updatedAt && <Typography
+        component="div"
+        variant="body2"
+        color="text.secondary"
+        sx={{ my: 1 }}
+      >
+        {formatToMySQLDateTime(new Date(comment.updatedAt))}
+      </Typography>
+      }
 
       {Array.isArray(comment.imageUrls) && comment.imageUrls.length > 0 && (
         <Box sx={{ mt: 1, mb: 1}}>

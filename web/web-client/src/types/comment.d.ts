@@ -8,4 +8,6 @@ export interface Comment {
   content: string;
   isEdited?: boolean;
   imageUrls: string[];
+  createdAt?: string;
+  updatedAt?: string;
 } 

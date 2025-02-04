@@ -19,6 +19,8 @@ export const getCommentListApi = async (id: number): Promise<Comment[]> => {
                 imageUrls: item.imageUrls || [],
                 mediaId: item.mediaId,
                 userId: item.user.id,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
             });
         });
         return comments; // 从响应中提取 data 属性

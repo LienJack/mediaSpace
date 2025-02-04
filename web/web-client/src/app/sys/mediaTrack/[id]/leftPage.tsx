@@ -12,7 +12,13 @@ import { Media } from "@/types/media.ds";
 import { getFileDetail } from '@/api/file'
 
 interface CommentProgressDot extends ProgressDot {
-  id: string; // 明确id为string类型
+  id: string;
+  time: number;
+  text: string;
+  avatar?: string;
+  comment?: string;
+  images?: string[];
+  createdAt: Date;
 }
 
 export default function LeftPage({ media }: { media?: Media }) {
@@ -21,7 +27,7 @@ export default function LeftPage({ media }: { media?: Media }) {
   const [progressDot, setProgressDot] = useState<CommentProgressDot[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
   const { comments } = useCommentStore();
-  const [videoHeight] = useState<string>('calc(100vh - 220px)');
+  // const [videoHeight] = useState<string>('calc(100vh - 220px)');
 
   // 获取视频URL
   useEffect(() => {
@@ -59,19 +65,18 @@ export default function LeftPage({ media }: { media?: Media }) {
 
   // 转换评论为进度点
   useEffect(() => {
-    if (progressDot.length > 0) return;
-    let id = 100;
     const newProgressDots = comments.map((comment) => ({
-      id: comment.id?.toString() || `${id++}`,
+      id: comment.id?.toString() || crypto.randomUUID(),
       time: comment.timestamp,
       text: comment.username,
       avatar: comment.avatarUrl,
       comment: comment.content,
       images: comment.imageUrls,
+      createdAt: new Date(),
     }));
 
     setProgressDot(newProgressDots);
-  }, [comments, progressDot.length]);
+  }, [comments]); // 直接依赖 comments 数组
 
   return (
     <Paper
@@ -83,7 +88,7 @@ export default function LeftPage({ media }: { media?: Media }) {
         height: "100%",
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
+        overflow: 'auto',
       }}
     >
       <Box 
@@ -95,14 +100,11 @@ export default function LeftPage({ media }: { media?: Media }) {
         }}
       >
         <Box sx={{
-          padding: '0 20px',
-          height: videoHeight,
-          margin: '0 auto',
+          padding: '0 10%',
           width: '100%',
         }}>
           <Video
             url={videoUrl}
-            height="100%"
             timeThreshold={5}
             minDotDistance={10}
             progressDots={progressDot}

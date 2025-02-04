@@ -34,13 +34,13 @@ export interface VideoProps {
 
 const Video = ({ 
   url,
-  width = '100%',
-  height = '100%',
+  width,
+  height,
   poster,
   autoplay = false,
   progressDots = [],
   timeThreshold = 1, // 默认 1 秒内的评论会被分组
-  minDotDistance = 5, // 默认最小间距 5 秒
+  minDotDistance, // 移除默认值，改为动态计算
   onDotClick,
   onPlayerReady
 }: VideoProps) => {
@@ -51,6 +51,15 @@ const Video = ({
   const [played, setPlayed] = useState(0)
   const [seeking, setSeeking] = useState(false)
   const setPlayer = usePlayerStore((state) => state.setPlayer)
+
+
+  // 计算动态最小标记点间距
+  const dynamicMinDotDistance = useMemo(() => {
+    // 如果提供了 minDotDistance，使用提供的值
+    if (minDotDistance !== undefined) return minDotDistance;
+    // 否则根据视频时长动态计算（确保至少为1秒）
+    return Math.max(duration / 100, 1);
+  }, [duration, minDotDistance]);
 
   // 客户端挂载检查
   useEffect(() => {
@@ -150,7 +159,7 @@ const Video = ({
       groupTimes.forEach((time, index) => {
         const nextTime = groupTimes[index + 1];
         
-        if (nextTime && (nextTime - time) < minDotDistance) {
+        if (nextTime && (nextTime - time) < dynamicMinDotDistance) {
           // 如果与下一个标记点距离太近，合并到当前组
           currentGroup.push(...groups[time]);
         } else {
@@ -168,7 +177,7 @@ const Video = ({
     }
 
     return groups;
-  }, [progressDots, timeThreshold, minDotDistance, duration]);
+  }, [progressDots.length, timeThreshold, dynamicMinDotDistance, duration]);
 
   // 自定义标记点组件
   const CustomDot = ({ dots }: { dots: ProgressDot[] }) => (
@@ -185,8 +194,8 @@ const Video = ({
     >
       <span 
         style={{ 
-          width: 8,
-          height: 8,
+          width: 12,
+          height: 12,
           backgroundColor: theme.palette.secondary.main,
           borderRadius: '50%',
           display: 'block',
@@ -253,7 +262,15 @@ const Video = ({
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <Avatar src={dot.avatar} sx={{ width: 24, height: 24, mr: 1 }} />
                 <Typography variant="subtitle2">{dot.text}</Typography>
-                <Typography variant="subtitle2" sx={{ ml: 1 }}>{formatTime(dot.time)}</Typography>
+                <Typography 
+                  variant="subtitle2" 
+                  sx={{ ml: 2 }} 
+                  color='primary' 
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => playerRef.current?.seekTo(dot.time)}
+                >
+                  {formatTime(dot.time)}
+                </Typography>
               </Box>
               {dot.comment && (
                 <Typography variant="body2" sx={{ mb: 1 }}>{dot.comment}</Typography>
@@ -279,7 +296,7 @@ const Video = ({
 
   return (
     <div className="video-container h-full">
-      <Box sx={{ position: 'relative', height: 'calc(100% - 30px)' }}>
+      <Box sx={{ position: 'relative' }}>
         <ReactPlayer
           ref={playerRef}
           url={url}
@@ -337,6 +354,7 @@ const Video = ({
               marginTop: -5,
               backgroundColor: '#fff',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              display: 'none'
             }
           }}
           dotStyle={{
