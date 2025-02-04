@@ -1,11 +1,11 @@
 import request from './base';
-import { User } from './models/user';
+import { UserVO } from './models/user';
 import { Response } from './models/base'
 const baseUrl = '/v1/user';
 
-export const getUserInfo = async (id: string): Promise<User> => {
+export const getUserInfo = async (id: string): Promise<UserVO> => {
     try {
-        const response = await request.get(`${baseUrl}/${id}`) as Response<User>;
+        const response = await request.get(`${baseUrl}/${id}`) as Response<UserVO>;
         return response.data; // 从响应中提取 data 属性
     } catch (error) {
         console.error('获取用户信息出错:', error); // 错误处理
@@ -14,9 +14,9 @@ export const getUserInfo = async (id: string): Promise<User> => {
 }
 
 // 获取所有用户
-export const getAllUsersApi = async (): Promise<User[]> => {
+export const getAllUsersApi = async (): Promise<UserVO[]> => {
     try {
-        const response = await request.get(`${baseUrl}/list`) as Response<User[]>;
+        const response = await request.get(`${baseUrl}/list`) as Response<UserVO[]>;
         return response.data; // 从响应中提取 data 属性
     } catch (error) {
         console.error('获取用户列表出错:', error); // 错误处理
@@ -25,9 +25,9 @@ export const getAllUsersApi = async (): Promise<User[]> => {
 };
 
 // 更新用户信息
-export const updateUserApi = async (id: string, userData: Partial<User>): Promise<User> => {
+export const updateUserApi = async (id: string, userData: Partial<UserVO>): Promise<UserVO> => {
     try {
-        const response = await request.post(`${baseUrl}/update`, userData) as Response<User>;
+        const response = await request.post(`${baseUrl}/update`, userData) as Response<UserVO>;
         return response.data; // 从响应中提取 data 属性
     } catch (error) {
         console.error('更新用户信息出错:', error); // 错误处理

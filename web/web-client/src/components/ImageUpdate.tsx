@@ -13,7 +13,8 @@ import {
   AttachFile as AttachFileIcon,
 } from "@mui/icons-material";
 import { useDropzone } from "react-dropzone";
-import { UpdateFileApi } from "@/api/file";
+import { uploadFile } from "@/api/file";
+import type { AxiosProgressEvent } from 'axios';
 
 export interface ImageFile {
   file: File;
@@ -46,9 +47,9 @@ export const ImageUpdate = ({ open, onClose, images, setImages }: ImageUpdatePro
     setImages((prev) => [...prev, newImage]);
 
     try {
-      const url = await UpdateFileApi(
+      const url = await uploadFile(
         formData,
-        (progressEvent: ProgressEvent) => {
+        (progressEvent: AxiosProgressEvent) => {
           if (progressEvent.total) {
             const progress = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total

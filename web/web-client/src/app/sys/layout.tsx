@@ -9,7 +9,6 @@ import useUserStore from '@/store/userStore';
 import { User } from '@/types/user';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
 const inter = Inter({
   subsets: ["latin"],
   display: 'swap',

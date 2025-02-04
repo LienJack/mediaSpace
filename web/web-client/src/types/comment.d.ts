@@ -1,8 +1,7 @@
-import { User } from "./user.d";
 export interface Comment {
-  id?: string;
-  mediaId: string;
-  user: User;
+  id?: number;
+  mediaId: number;
+  userId: number;
   timestamp: number; // 视频时间戳(秒)
   avatarUrl?: string;
   username: string;

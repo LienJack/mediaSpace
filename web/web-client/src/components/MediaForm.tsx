@@ -14,7 +14,7 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import { Media } from "@/types/media";
+import { Media } from "@/types/media.ds";
 import FileListModel from '@/components/FileListModel';
 import { FileType } from "@/api/models/files";
 import { useState, useEffect } from "react";

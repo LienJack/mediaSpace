@@ -16,49 +16,49 @@
 /**
  * 
  * @export
- * @interface User
+ * @interface UserVO
  */
-export interface User {
+export interface UserVO {
     /**
      * ID
      * @type {number}
-     * @memberof User
+     * @memberof UserVO
      */
     id: number;
     /**
      * 
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     account: string;
     /**
      * name
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     name: string;
     /**
      * 头像地址
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     avatarUrl: string;
     /**
      * 创建时间
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     createdAt: string;
     /**
      * 更新时间
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     updatedAt: string;
     /**
      * 删除
      * @type {string}
-     * @memberof User
+     * @memberof UserVO
      */
     deletedAt: string;
 }

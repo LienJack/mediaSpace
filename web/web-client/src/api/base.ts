@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 // const baseUrl = 'http://127.0.0.1:4523/m1/5807700-5492742-default';
 const baseUrl = '/api';
 
@@ -18,15 +19,16 @@ instance.interceptors.response.use(
         if (code === 200) {
             return response.data; // 返回数据
         } else {
-            // 使用 Alert 组件提示错误信息
-            // 这里需要在组件中处理 Alert 的显示
-            // 你可以将 msg 存储在状态中，然后在组件中渲染 Alert
+            // 显示错误提示
+            toast.error(msg || '操作失败');
             console.error(msg); // 也可以选择在控制台输出错误信息
             return Promise.reject(msg); // 返回一个拒绝的 Promise
         }
     },
     error => {
         // 处理请求错误
+        const errorMessage = error.response?.data?.msg || error.message || '网络请求失败';
+        toast.error(errorMessage);
         console.error('请求错误:', error);
         return Promise.reject(error);
     }

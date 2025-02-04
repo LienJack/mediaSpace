@@ -1,9 +1,33 @@
-import axios from "axios";
+import axios, { AxiosInstance, AxiosResponse, AxiosProgressEvent } from "axios";
 import { alistBaseUrl, fileImagePath } from "@/utils/env"
-import { ContentRes, FsGetRes, FsListReq, Response } from "./models/files";
+import { FsGetRes, FsListReq, FsListRes } from "./models/files";
+
+/**
+ * 定义API响应类型
+ */
+interface ApiResponse<T> {
+    code: number;
+    message: string;
+    data: T;
+}
+
+/**
+ * 登录请求参数类型
+ */
+interface LoginRequest {
+    username: string;
+    password: string;
+}
+
+/**
+ * 登录响应类型
+ */
+interface LoginResponse {
+    token: string;
+}
 
 // 创建axios实例
-const instance = axios.create({
+const instance: AxiosInstance = axios.create({
     baseURL: alistBaseUrl,
     timeout: 10000,
     headers: {
@@ -11,72 +35,86 @@ const instance = axios.create({
     },
 });
 
-// 登录获取token
-export const LoginApi = async () => {
-    const data = {
+/**
+ * 登录获取token
+ * @returns Promise<string> 返回token
+ */
+export const loginToAlist = async (): Promise<string> => {
+    const loginData: LoginRequest = {
         username: "admin",
         password: "admin"
     };
-    const config = {
-        baseURL: alistBaseUrl,
-        timeout: 10000,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-    const token = await axios.post('/auth/login', data, config).then(res => res.data.data.token);
-    sessionStorage.setItem('alsitToken', token);  
-    return token;
-}
+
+    try {
+        const response = await axios.post<ApiResponse<LoginResponse>>(
+            '/auth/login',
+            loginData,
+            {
+                baseURL: alistBaseUrl,
+                timeout: 10000,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+        
+        const token = response.data.data.token;
+        sessionStorage.setItem('alsitToken', token);
+        return token;
+    } catch (error) {
+        console.error('登录失败:', error);
+        throw new Error('登录获取token失败');
+    }
+};
 
 // 请求拦截器
 instance.interceptors.request.use(
     async (config) => {
         let token = sessionStorage.getItem('alsitToken');
         if (!token) {
-            token = await LoginApi();
+            token = await loginToAlist();
         }
         config.headers.authorization = token;
         return config;
     },
     (error) => {
+        console.error('请求拦截器错误:', error);
         return Promise.reject(error);
     }
 );
 
-// 添加响应拦截器以处理401错误
-let isRefreshing = false; // 标志，表示是否正在刷新token
-let pendingRequests: any[] = []; // 存储待处理的请求
+// 响应拦截器
+let isRefreshing = false;
+const pendingRequests: Array<() => void> = [];
 
 instance.interceptors.response.use(
-    async (response) => {
+    async (response: AxiosResponse<ApiResponse<unknown>>) => {
         if (response.data.code === 200) {
             return response;
         }
+
         if (response.data.code === 401) {
             const originalConfig = response.config;
 
             if (!isRefreshing) {
                 isRefreshing = true;
                 try {
-                    await LoginApi();
-                    // 获取新token后立即重试当前请求
+                    await loginToAlist();
                     originalConfig.headers.authorization = sessionStorage.getItem('alsitToken');
                     const retryResponse = await instance(originalConfig);
                     
-                    // 处理其他等待的请求
                     pendingRequests.forEach((callback) => callback());
-                    pendingRequests = [];
+                    pendingRequests.length = 0;
                     
                     return retryResponse;
-                } catch (err) {
-                    return Promise.reject(err);
+                } catch (error) {
+                    console.error('Token刷新失败:', error);
+                    return Promise.reject(error);
                 } finally {
                     isRefreshing = false;
                 }
             }
 
-            // 其他并发请求将等待token刷新完成
             return new Promise((resolve) => {
                 pendingRequests.push(() => {
                     originalConfig.headers.authorization = sessionStorage.getItem('alsitToken');
@@ -84,46 +122,84 @@ instance.interceptors.response.use(
                 });
             });
         }
-        return Promise.reject(response.data.message);
+
+        return Promise.reject(new Error(response.data.message));
     },
     (error) => {
+        console.error('响应拦截器错误:', error);
         return Promise.reject(error);
     }
 );
 
-// 修改现有的API函数使用instance实例
-export const getFileDetail = async (filePath: string): Promise<Response<FsGetRes>> => {
-    const res = await instance.post(`/fs/get`, {
-        path: filePath // 添加path参数
-    });
-    return res.data;
+/**
+ * 获取文件详情
+ * @param filePath 文件路径
+ * @returns Promise<ApiResponse<FsGetRes>>
+ */
+export const getFileDetail = async (filePath: string): Promise<ApiResponse<FsGetRes>> => {
+    try {
+        const response = await instance.post<ApiResponse<FsGetRes>>('/fs/get', {
+            path: filePath
+        });
+        return response.data;
+    } catch (error) {
+        console.error('获取文件详情失败:', error);
+        throw error;
+    }
 };
 
-export const UpdateFileApi = async (formData: FormData, onUploadProgress?: (progressEvent: ProgressEvent) => void) => {
-    const fileName = (formData.get("file") as File)?.name || "name";
-    const filePath = `${fileImagePath}/${Math.random().toString().substring(2, 5)}-${fileName}`;
+/**
+ * 上传文件
+ * @param formData 文件表单数据
+ * @param onUploadProgress 上传进度回调
+ * @returns Promise<string> 返回文件路径
+ */
+export const uploadFile = async (
+    formData: FormData,
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+): Promise<string> => {
+    const file = formData.get("file") as File;
+    if (!file) {
+        throw new Error('未找到上传文件');
+    }
 
-    const config = {
-        method: "put",
-        url: `/fs/form`,
-        headers: {
-            accept: "application/json, text/plain, */*",
-            "file-path": `${encodeURI(filePath)}`,
-            "As-Task": "true",
-            "Content-Type": "multipart/form-data; boundary=----WebKitFormBoundarylFuwOB1pQ9f4hvRh",
-        },
-        data: formData,
-        onUploadProgress,
-    };
+    const fileName = file.name;
+    const randomStr = Math.random().toString(36).substring(2, 5);
+    const filePath = `${fileImagePath}/${randomStr}-${fileName}`;
 
-    await instance(config);
-    // 这里会把本机的ip都写入数据库，要是换ip就炸裂了
-    // const res = await getFileDetail(filePath);
-    // return res.data.raw_url;
-    return `/p${filePath}`;
+    try {
+        await instance.put('/fs/form', formData, {
+            headers: {
+                'file-path': encodeURI(filePath),
+                'As-Task': 'true',
+                'Content-Type': 'multipart/form-data',
+            },
+            onUploadProgress,
+        });
+
+        return `/p${filePath}`;
+    } catch (error) {
+        console.error('文件上传失败:', error);
+        throw error;
+    }
 };
-// 列出文件目录
-export const getFileList = async (data: FsListReq): Promise<Response<FsListRes>> => {
-    const res = await instance.post(`/fs/list`, data);
-    return res.data;
+
+/**
+ * 获取文件列表
+ * @param params 列表请求参数
+ * @returns Promise<ApiResponse<FsListRes>>
+ */
+export const getFileList = async (params: FsListReq): Promise<ApiResponse<FsListRes>> => {
+    try {
+        const response = await instance.post<ApiResponse<FsListRes>>('/fs/list', params);
+        return response.data;
+    } catch (error) {
+        console.error('获取文件列表失败:', error);
+        throw error;
+    }
 };
+
+/**
+ * @deprecated 请使用 uploadFile 替代
+ */
+export const UpdateFileApi = uploadFile;

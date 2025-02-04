@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,6 +25,13 @@ export default function RootLayout({
       <body>
         <ThemeRegistry>
           {children}
+          <Toaster position="top-right" toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }} />
         </ThemeRegistry>
       </body>
     </html>

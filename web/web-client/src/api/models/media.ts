@@ -18,7 +18,7 @@
  * @export
  * @interface Media
  */
-export interface MediaRes {
+export interface MediaVO {
     /**
      * 
      * @type {number}
@@ -70,4 +70,16 @@ export interface MediaRes {
     type?: number;
 }
 
+export interface CreateMediaRequest {
+    descript?: string;
+    name: string;
+    path: string
+    type: number
+}
+export interface UpdateMediaRequest {
+    descript?: string;
+    name?: string;
+    path?: string
+    type?: number
+}
 

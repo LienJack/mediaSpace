@@ -29,8 +29,8 @@ export interface VideoProps {
 // 使用动态导入避免 SSR
 const Video = ({ 
   url,
-  width = '100%',
-  height= '80%', 
+  width,
+  height, 
   poster,
   autoplay = false,
   progressDots = [], // 默认空数组
@@ -51,12 +51,12 @@ const Video = ({
     playerRef.current = new Player({
       el: containerRef.current,
       url: url,
-      width: width,
-      height: height,
+      width: typeof width === 'number' ? width : parseInt(width || '0'),
+      height: typeof height === 'number' ? height : parseInt(height || '0'),
       poster: poster,
       autoplay: autoplay,
       // 基础配置
-      fluid: true, // 流式布局
+      fluid: false, // 改为 false，不使用流式布局
       playsinline: true, // 行内播放
       volume: 0.6, // 默认音量
       // 交互配置

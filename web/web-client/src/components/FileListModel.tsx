@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, ReactElement } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -13,85 +13,154 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Dialog
+  Dialog,
+  DialogProps
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
   Image as ImageIcon,
-  TextSnippet as TextIcon,
   VideoLibrary as VideoIcon
 } from '@mui/icons-material';
 import { getFileList } from '@/api/file';
-import { ContentRes, FsListReq, FileType } from '@/api/models/files';
+import { ContentVO, FsListReq, FileType } from '@/api/models/files';
 import { useRequest } from 'ahooks';
 import { formatToMySQLDateTime } from '@/utils/time';
 import prettyBytes from 'pretty-bytes';
 import { fileBasePath } from '@/utils/env'
-import { FixedSizeList as List } from 'react-window';
+import { FixedSizeList as VirtualList } from 'react-window';
 
-interface FileListModelProps {
+// 定义组件的属性接口
+interface FileListModelProps extends Omit<DialogProps, 'onClose'> {
   open: boolean;
   onClose: () => void;
-  onFileClick: (path: string, file: ContentRes,) => void;
+  onFileClick: (filePath: string, fileInfo: ContentVO) => void;
   allowTypes?: FileType[];
 }
 
-const FileListModel: React.FC<FileListModelProps> = ({ open, onClose, onFileClick, allowTypes =[] }) => {
-  const [files, setFiles] = useState<ContentRes[]>([]);
-  const pathRef = useRef<string[]>([fileBasePath]);
-  const param: FsListReq = {
+// 定义面包屑路径类型
+type BreadcrumbPath = string[];
+
+// 定义列表项渲染器的属性接口
+interface ListItemRendererProps {
+  index: number;
+  style: React.CSSProperties;
+}
+
+// 定义文件图标映射类型
+type FileIconMap = {
+  [key in FileType]?: ReactElement;
+};
+
+const FileListModel: React.FC<FileListModelProps> = ({ 
+  open, 
+  onClose, 
+  onFileClick, 
+  allowTypes = [],
+  ...dialogProps 
+}) => {
+  const [fileList, setFileList] = useState<ContentVO[]>([]);
+  const currentPathRef = useRef<BreadcrumbPath>([fileBasePath]);
+
+  const listRequestParams: FsListReq = {
     per_page: 100,
     refresh: true
   };
 
-  // 使用 useRequest 进行数据请求
-  const { run } = useRequest((path: string) => getFileList({...param, path}), {
-    defaultParams: [pathRef.current.join('/')],
-    onBefore: () => {
-        console.log(pathRef.current);
-    },
-    onSuccess: (data) => {
-        setFiles(data.data.content);
-    }
-  });
-
-  const handleBack = () => {
-    pathRef.current.pop();
-    run(pathRef.current.join('/'));
-  };
-
-  const handleFileClick = (file: ContentRes) => {
-    if (file.is_dir) {
-      // 更新路径并重新请求文件列表
-      pathRef.current.push(file.name);
-      run(pathRef.current.join('/')); // 重新请求文件列表
-    } else {
-      if (allowTypes.length > 0 && !allowTypes.includes(file.type)) {
-        return;
+  // 文件列表数据请求
+  const { run: fetchFileList } = useRequest(
+    (path: string) => getFileList({ ...listRequestParams, path }), 
+    {
+      defaultParams: [currentPathRef.current.join('/')],
+      onSuccess: (response) => {
+        setFileList(response.data.content);
       }
-      pathRef.current.push(file.name);
-      onFileClick(pathRef.current.join('/'), file);
-      pathRef.current.pop();
-      onClose();
     }
+  );
+
+  // 处理返回上一级
+  const handleNavigateBack = () => {
+    currentPathRef.current.pop();
+    fetchFileList(currentPathRef.current.join('/'));
   };
 
-  // 添加一个函数来根据文件类型返回相应的图标
-  const getFileIcon = (file: ContentRes) => {
+  // 处理文件或文件夹点击
+  const handleItemClick = (file: ContentVO) => {
+    if (file.is_dir) {
+      currentPathRef.current.push(file.name);
+      fetchFileList(currentPathRef.current.join('/'));
+      return;
+    }
+
+    const isAllowedType = allowTypes.length === 0 || allowTypes.includes(file.type);
+    if (!isAllowedType) return;
+
+    currentPathRef.current.push(file.name);
+    onFileClick(currentPathRef.current.join('/'), file);
+    currentPathRef.current.pop();
+    onClose();
+  };
+
+  // 处理面包屑导航点击
+  const handleBreadcrumbClick = (index: number) => {
+    currentPathRef.current = currentPathRef.current.slice(0, index + 1);
+    fetchFileList(currentPathRef.current.join('/'));
+  };
+
+  // 渲染文件图标
+  const renderFileIcon = (file: ContentVO) => {
     if (file.is_dir) {
       return <FolderIcon sx={{ mr: 1, color: 'primary.main' }} />;
     }
-    switch (file.type) {
-      case FileType.IMAGE:
-        return <ImageIcon sx={{ mr: 1, color: 'text.secondary' }} />;
-      case FileType.VIDEO:
-        return <VideoIcon sx={{ mr: 1, color: 'text.secondary' }} />;
-      // 可以根据需要添加更多文件类型
-      default:
-        return <FileIcon sx={{ mr: 1, color: 'text.secondary' }} />;
-    }
+
+    const iconMap: FileIconMap = {
+      [FileType.IMAGE]: <ImageIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+      [FileType.VIDEO]: <VideoIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+    };
+
+    return iconMap[file.type] || <FileIcon sx={{ mr: 1, color: 'text.secondary' }} />;
+  };
+
+  // 渲染列表项
+  const renderListItem = ({ index, style }: ListItemRendererProps) => {
+    const file = fileList[index];
+    const isAllowed = file.is_dir || allowTypes.includes(file.type);
+
+    return (
+      <TableContainer style={style}>
+        <Table>
+          <TableBody>
+            <TableRow
+              hover
+              onClick={() => handleItemClick(file)}
+              sx={{ 
+                cursor: isAllowed ? 'pointer' : 'not-allowed',
+                opacity: isAllowed ? 1 : 0.5,
+                '& td': { flex: 1 } 
+              }}
+            >
+              <TableCell width="50%">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {renderFileIcon(file)}
+                  <Typography variant="body2" noWrap>{file.name}</Typography>
+                </Box>
+              </TableCell>
+              <TableCell width="25%" align="right">
+                <Typography variant="body2" color="text.secondary">
+                  {file.size ? prettyBytes(file.size) : '-'}
+                </Typography>
+              </TableCell>
+              <TableCell width="25%" align="right">
+                <Typography variant="body2" color="text.secondary">
+                  {formatToMySQLDateTime(new Date(file.modified))}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
   };
 
   return (
@@ -100,39 +169,34 @@ const FileListModel: React.FC<FileListModelProps> = ({ open, onClose, onFileClic
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      sx={{zIndex: 10000}}
+      sx={{ zIndex: 10000 }}
+      {...dialogProps}
     >
       <Container maxWidth="lg" sx={{ p: 0, bgcolor: 'background.paper', width: '100%' }}>
-        <Paper 
-          sx={{
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            overflow: 'hidden',
-            width: '100%',
-            height: '70vh',
-          }}
-        >
+        <Paper sx={{
+          bgcolor: 'background.paper',
+          borderRadius: 2,
+          overflow: 'hidden',
+          width: '100%',
+          height: '70vh',
+        }}>
           {/* 面包屑导航 */}
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
             <IconButton 
-              onClick={handleBack}
+              onClick={handleNavigateBack}
               size="small"
               sx={{ mr: 1 }}
             >
               <ArrowBackIcon />
             </IconButton>
             <Breadcrumbs aria-label="breadcrumb">
-              {pathRef.current.map((path, index) => (
+              {currentPathRef.current.map((path, index) => (
                 <Link 
                   key={index}
                   underline="hover"
                   color="inherit"
                   sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                  onClick={() => {
-                    // 处理点击面包屑的逻辑
-                    pathRef.current = pathRef.current.slice(0, index + 1);
-                    run(pathRef.current.join('/'));
-                  }}
+                  onClick={() => handleBreadcrumbClick(index)}
                 >
                   {path}
                 </Link>
@@ -152,54 +216,14 @@ const FileListModel: React.FC<FileListModelProps> = ({ open, onClose, onFileClic
               </TableHead>
             </Table>
             
-            <List
+            <VirtualList
               height={window.innerHeight * 0.7 - 120}
-              itemCount={files.length}
+              itemCount={fileList.length}
               itemSize={60}
               width="100%"
             >
-              {({ index, style }) => {
-                const file = files[index];
-                const allow = file.type === FileType.DIR || allowTypes.includes(file.type);
-                return (
-                  <TableContainer style={style}>
-                    <Table>
-                      <TableBody>
-                        <TableRow
-                          key={file.name}
-                          hover
-                          onClick={() => {
-                            handleFileClick(file);
-                          }}
-                          sx={{ 
-                            cursor: allow ? 'pointer' : 'not-allowed',
-                            opacity: allow ? 1 : 0.5,
-                            '& td': { flex: 1 } 
-                          }}
-                        >
-                          <TableCell width="50%">
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              {getFileIcon(file)} {/* 使用新函数获取图标 */}
-                              <Typography variant="body2" noWrap>{file.name}</Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell width="25%" align="right">
-                            <Typography variant="body2" color="text.secondary">
-                              {file.size ? prettyBytes(file.size) : '-'}  
-                            </Typography>
-                          </TableCell>
-                          <TableCell width="25%" align="right">
-                            <Typography variant="body2" color="text.secondary">
-                              {formatToMySQLDateTime(new Date(file.modified))}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                );
-              }}
-            </List>
+              {renderListItem}
+            </VirtualList>
           </Box>
         </Paper>
       </Container>

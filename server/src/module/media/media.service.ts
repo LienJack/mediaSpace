@@ -42,6 +42,9 @@ export class MediaService {
   }
 
   remove(id: number) {
-    return `This action removes a #${id} media`;
+    return this.prisma.media.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

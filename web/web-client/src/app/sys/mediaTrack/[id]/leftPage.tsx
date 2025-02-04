@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { Box, Paper, Stack } from "@mui/material";
 import Video from "@/components/Video";
 import Player from "xgplayer";
@@ -9,95 +8,94 @@ import TextEditor from "@/app/sys/mediaTrack/[id]/TextEditor";
 import { useCallback, useEffect, useState } from "react";
 import { useCommentStore } from "@/store/commentStore";
 import { ProgressDot } from "@/components/Video";
-import { Media } from "@/types/media";
+import { Media } from "@/types/media.ds";
 import { getFileDetail } from '@/api/file'
+
+interface CommentProgressDot extends ProgressDot {
+  id: string; // 明确id为string类型
+}
 
 export default function LeftPage({ media }: { media?: Media }) {
   const setPlayer = usePlayerStore((state) => state.setPlayer);
   const removePlayer = usePlayerStore((state) => state.removePlayer);
-  const [progressDot, setProgressDot] = useState<ProgressDot[]>([]);
+  const [progressDot, setProgressDot] = useState<CommentProgressDot[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
+  const { comments } = useCommentStore();
+  const [ videoHeight] = useState<string>('calc(100vh - 350px)');
+
+  // 获取视频URL
   useEffect(() => {
     if (!media) return;
-    if (media.type === 1) {
-      getFileDetail(media.path).then((res) => {
+    const fetchVideoUrl = async () => {
+      if (media.type === 1) {
+        const res = await getFileDetail(media.path);
         if (res.data?.raw_url) {
-          setVideoUrl(res.data?.raw_url);
+          setVideoUrl(res.data.raw_url);
         }
-      });
-    } 
-    if (media.type === 2) {
-      setVideoUrl(media.path);
-    }
+      } else if (media.type === 2) {
+        setVideoUrl(media.path);
+      }
+    };
+
+    fetchVideoUrl();
   }, [media]);
+
+  // 处理播放器准备就绪
   const handlePlayerReady = useCallback(
     (player: Player) => {
-      // 确保只在播放器实例真正改变时才更新
       if (player) {
         setPlayer(player);
       }
     },
     [setPlayer]
   );
+
   // 组件卸载时清理播放器实例
   useEffect(() => {
     return () => {
       removePlayer();
     };
-  }, [setPlayer, removePlayer]);
+  }, [removePlayer]);
 
-  const { comments } = useCommentStore();
-    // 转换 comments 为 progressDot
+  // 转换评论为进度点
   useEffect(() => {
-    if (progressDot.length !== 0) {
-      return
-    }
-    const newValues = Array.from(
-      new Map(
-        comments.map((comment) => [
-          comment.timestamp,
-          {
-            id: comment.id,
-            time: comment.timestamp,
-            text: comment.username,
-          },
-        ])
-      ).values()
-    );
-    setProgressDot(newValues);
-  },[comments])
+    if (progressDot.length > 0) return;
+    let id = 100
+    const newProgressDots = comments.map((comment) => ({
+      id: comment.id?.toString() || `${id++}`, // 确保id为string类型
+      time: comment.timestamp,
+      text: comment.username,
+    }));
 
-
+    setProgressDot(newProgressDots);
+  }, [comments, progressDot.length]);
 
   return (
     <Paper
       sx={{
-        flexGrow: 1, // 自动填充剩余空间
+        flexGrow: 1,
         p: 2,
-        minWidth: "200px", // 最小宽度
+        minWidth: "200px",
         width: "70%",
         height: "100%",
         overflow: 'auto',
       }}
     >
-      <Stack
-        direction="column"
-        spacing={2}
-      >
-        {/* 上部分 - 自适应高度 */}
+      <Stack direction="column" spacing={2}>
         <Box sx={{
           padding: '0 100px',
-         justifyContent: 'center',
+          justifyContent: 'center',
+          height: videoHeight,
+          margin: '0 auto',
         }}>
           <Video
-            url={videoUrl} // 假设这是视频 API 地址
-            width='100%'
+            url={videoUrl}
+            height={videoHeight}
             progressDots={progressDot}
             onPlayerReady={handlePlayerReady}
           />
         </Box>
 
-        {/* 下部分 - 固定高度 */}
         <Box
           sx={{
             minHeight: "150px",
@@ -108,7 +106,7 @@ export default function LeftPage({ media }: { media?: Media }) {
             overflowY: "auto",
           }}
         >
-          <TextEditor/>
+          <TextEditor />
         </Box>
       </Stack>
     </Paper>

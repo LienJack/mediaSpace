@@ -14,6 +14,7 @@ interface ImagePreviewProps {
   images: string[];
   width?: string;
   cols?: number;
+  rowHeight?: number;
   handleDelete?: (index: number) => void;
 }
 
@@ -21,6 +22,7 @@ const ImagePreview: FC<ImagePreviewProps> = ({
   images,
   width = "200px",
   cols = 3,
+  rowHeight = 50,
   handleDelete,
 }) => {
   const [open, setOpen] = useState(false);
@@ -33,7 +35,7 @@ const ImagePreview: FC<ImagePreviewProps> = ({
 
   return (
     <>
-      <ImageList sx={{ width }} cols={cols} rowHeight={50}>
+      <ImageList sx={{ width, overflow: "hidden" }} cols={cols} rowHeight={rowHeight}>
         {images.map((image, index) => (
           <ImageListItem
             key={index}

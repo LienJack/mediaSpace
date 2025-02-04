@@ -12,72 +12,72 @@
  */
 
 
-import { User } from './user';
+import { UserVO } from './user';
 
 /**
  * 
  * @export
- * @interface Comment
+ * @interface CommentVO
  */
-export interface CommentRes {
+export interface CommentVO {
     /**
      * ID
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     id: number;
     /**
      * 媒体的id
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     mediaId: number;
     /**
      * 
-     * @type {User}
-     * @memberof Comment
+     * @type {UserVO}
+     * @memberof CommentVO
      */
-    user: User;
+    user: UserVO;
     /**
      * 评论
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     content: string;
     /**
      * 视频时间戳
      * @type {number}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     timestamp?: number;
     /**
      * 是否被编辑
      * @type {boolean}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     isEdited: boolean;
     /**
      * 
      * @type {Array<string>}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     imageUrls: Array<string>;
     /**
      * 创建时间
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     createdAt: string;
     /**
      * 更新时间
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     updatedAt?: string;
     /**
      * 删除时间
      * @type {string}
-     * @memberof Comment
+     * @memberof CommentVO
      */
     deletedAt?: string;
 }

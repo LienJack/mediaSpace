@@ -1,12 +1,12 @@
 import request from './base';
-import { MediaRes } from './models/media';
-import { Media } from '@/types/media';
+import { MediaVO, CreateMediaRequest, UpdateMediaRequest } from './models/media';
+import { Media } from '@/types/media.ds';
 import { Response } from './models/base';
 const baseUrl = '/v1/media';
 export const getMediaListApi = async (): Promise<Media[]> => {
     // 获取媒体列表
     try {
-        const response = await request.get(`${baseUrl}/list`) as Response<MediaRes[]>;
+        const response = await request.get(`${baseUrl}/list`) as Response<MediaVO[]>;
         const mediaList: Media[] = [];
         response.data?.forEach((item) => {
             mediaList.push({
@@ -25,12 +25,7 @@ export const getMediaListApi = async (): Promise<Media[]> => {
         return [];
     }
 };
-export interface CreateMediaRequest {
-    descript?: string;
-    name: string;
-    path: string
-    type: number
-}
+
 export const createMediaApi = async (data: CreateMediaRequest) => {
     // 创建媒体
     try {
@@ -44,7 +39,7 @@ export const createMediaApi = async (data: CreateMediaRequest) => {
 export const getMediaApi = async (id: number): Promise<Media | null> => {
     // 创建媒体
     try {
-        const response = await request.get(`${baseUrl}/${id}`) as Response<MediaRes>;
+        const response = await request.get(`${baseUrl}/${id}`) as Response<MediaVO>;
         const media: Media = {
             id: response.data?.id ?? 0,
             name: response.data?.name ?? '',
@@ -58,5 +53,24 @@ export const getMediaApi = async (id: number): Promise<Media | null> => {
     } catch (error) {
         console.log(error);
         return null;
+    }
+};
+
+export const updateMediaApi = async (id: number, data: UpdateMediaRequest) => {
+    // 更新媒体
+    try {
+        const response = await request.post(`${baseUrl}/update/${id}`, data);
+        console.log(JSON.stringify(response.data));
+    } catch (error) {
+        console.log(error);
+    }
+};
+export const deleteMediaApi = async (id: number) => {
+    // 更新媒体
+    try {
+        const response = await request.post(`${baseUrl}/delete/${id}`);
+        console.log(JSON.stringify(response.data));
+    } catch (error) {
+        console.log(error);
     }
 };

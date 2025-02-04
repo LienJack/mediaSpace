@@ -1,4 +1,4 @@
-import { FC, useState, useRef } from "react";
+import { FC, useState } from "react";
 import {
   Typography,
   Avatar,
@@ -12,10 +12,9 @@ import {
   DialogActions,
   TextField,
   IconButton,
-  InputAdornment,
 } from "@mui/material";
 import { Comment } from "@/types/comment";
-import { formatTime, formatToMySQLDateTime } from "@/utils/time";
+import { formatTime } from "@/utils/time";
 import ImagePreview from "@/components/ImagePreview";
 import { useCommentStore } from "@/store/commentStore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,53 +28,154 @@ import {
   getCommentListApi,
 } from "@/api/comment";
 import { useParams } from "next/navigation";
-import React from "react";
-import { ImageFile } from "@/components/ImageUpdate";
-import { UpdateFileApi } from "@/api/file";
+import { uploadFile } from "@/api/file";
 
 interface CommentItemProps {
   comment: Comment;
-  onEdit?: (comment: Comment) => void;
   onTimeClick?: (timestamp: number) => void;
 }
 
-const CommentItem: FC<CommentItemProps> = ({
-  comment,
-  onTimeClick,
-}) => {
-  const [openDialog, setOpenDialog] = useState(false);
-  const [showInput, setShowInput] = useState(false);
+interface ReplyInputProps {
+  onSubmit: (content: string, imageUrls: string[]) => Promise<void>;
+  onClose: () => void;
+}
+
+const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
+  const [replyContent, setReplyContent] = useState("");
+  const [replyImages, setReplyImages] = useState<string[]>([]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const imageUrl = await uploadFile(formData);
+        setReplyImages((prev) => [...prev, imageUrl]);
+      } catch (error) {
+        console.error('上传图片失败:', error);
+      }
+    }
+  };
+
+  const handleDeleteImage = (index: number) => {
+    setReplyImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (replyContent.trim() === "") return;
+    try {
+      await onSubmit(replyContent.trim(), replyImages);
+      setReplyContent("");
+      setReplyImages([]);
+      onClose();
+    } catch (error) {
+      console.error('提交回复失败:', error);
+    }
+  };
+
+  return (
+    <Box>
+      <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
+        <TextField
+          variant="outlined"
+          size="small"
+          fullWidth
+          placeholder="输入回复..."
+          value={replyContent}
+          onChange={(e) => setReplyContent(e.target.value)}
+        />
+        <input
+          type="file"
+          id="upload-image"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleImageUpload}
+        />
+        <label htmlFor="upload-image">
+          <IconButton component="span">
+            <AddPhotoAlternate />
+          </IconButton>
+        </label>
+        <Button 
+          variant="outlined" 
+          size="small" 
+          onClick={handleSubmit}
+          disabled={!replyContent.trim()}
+        >
+          发送
+        </Button>
+      </Box>
+      {replyImages.length > 0 && (
+        <Box>
+          <ImagePreview 
+            cols={3} 
+            width="200px" 
+            images={replyImages} 
+            handleDelete={handleDeleteImage} 
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReplyVisible, setIsReplyVisible] = useState(false);
   const { setComments } = useCommentStore();
   const { user } = useUserStore();
   const params = useParams();
   const mediaId = params.id as string;
 
+  // 验证评论对象的必要属性
+  if (!comment || typeof comment !== 'object' || !comment.id) {
+    return null;
+  }
+
+  // 验证评论对象的其他必要属性
+  if (
+    typeof comment.timestamp !== 'number' ||
+    typeof comment.content !== 'string' ||
+    typeof comment.username !== 'string'
+  ) {
+    console.error('评论对象缺少必要属性:', comment);
+    return null;
+  }
+
   const handleTimeClick = () => {
     onTimeClick?.(comment.timestamp);
   };
 
-  const handleDelete = () => {
-    setOpenDialog(true);
+  const handleDeleteComment = async () => {
+    try {
+      await delCommentApi(Number(comment.id));
+      const updatedComments = await getCommentListApi(Number(mediaId));
+      setComments(updatedComments);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('删除评论失败:', error);
+    }
   };
 
-  const handleConfirmDelete = () => {
-    delCommentApi(comment.id).then(() => {
-      getCommentListApi(+mediaId).then((res) => {
-        setComments(res);
-        setOpenDialog(false);
-      });
-    });
+  const handleReplySubmit = async (content: string, imageUrls: string[]) => {
+    try {
+      const newComment: AddCommentReq = {
+        content,
+        imageUrls,
+        timestamp: comment.timestamp,
+        mediaId: Number(mediaId),
+        userId: user.id ?? 0,
+      };
+      await addCommentApi(newComment);
+      const comments = await getCommentListApi(Number(mediaId));
+      setComments(comments);
+    } catch (error) {
+      console.error('提交回复失败:', error);
+    }
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleShowInput = () => {
-    setShowInput((prev) => !prev);
-  };
-
-  const Primary = () => (
+  const renderCommentHeader = () => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Typography
         variant="body2"
@@ -83,7 +183,7 @@ const CommentItem: FC<CommentItemProps> = ({
         color="primary"
         sx={{
           fontWeight: "medium",
-          cursor: "pointer",
+          cursor: 'pointer',
           "&:hover": {
             textDecoration: "underline",
           },
@@ -97,29 +197,8 @@ const CommentItem: FC<CommentItemProps> = ({
       </Typography>
     </Box>
   );
-  const Secondary = () => {
-    const [ inputValue, setInputValue ] = useState("");
-    const [ImageList, setImageList] = useState<string[]>([]);
-    const handleDeleteImage = (index: number) => {
-      setImageList((prev) => prev.filter((_, i) => i !== index));
-    };
-    const handleSendComment = async () => {
-      const val = inputValue;
-      if (val.trim() === "") return;
-      const newComment: AddCommentReq = {
-        content: val.trim(),
-        imageUrls: ImageList,
-        timestamp: comment.timestamp, // 获取当前视频时间
-        mediaId: +mediaId, // 将 mediaId 转换为数字
-        userId: user.id, // 将 user.id 转换为数字
-      };
-      await addCommentApi(newComment);
-      const comments = await getCommentListApi(+mediaId);
-      setComments(comments);
-      setInputValue("");
-      setShowInput(false);
-    };
-    return (
+
+  const renderCommentContent = () => (
     <Box>
       <Typography
         component="div"
@@ -130,83 +209,52 @@ const CommentItem: FC<CommentItemProps> = ({
         {comment.content}
       </Typography>
 
-      {comment.images && comment.images.length > 0 && (
-        <Box sx={{ mt: 1, mb: 1 }}>
-          <ImagePreview cols={3} width="200px" images={comment.images} />
+      {Array.isArray(comment.imageUrls) && comment.imageUrls.length > 0 && (
+        <Box sx={{ mt: 1, mb: 1}}>
+          <ImagePreview cols={3} width="200px" images={comment.imageUrls} />
         </Box>
       )}
 
       <Box sx={{ mt: 1 }}>
-        <Typography component="div" variant="caption" color="text.secondary">
-          {formatToMySQLDateTime(new Date(comment.createdAt))}
-        </Typography>
         <Box sx={{ display: "flex", gap: 1, mt: 0.5 }}>
           <IconButton
-            aria-label="comment"
+            aria-label="reply"
             size="small"
-            onClick={handleShowInput}
+            onClick={() => setIsReplyVisible(!isReplyVisible)}
           >
             <ChatIcon />
           </IconButton>
-          <IconButton aria-label="delete" size="small" onClick={handleDelete}>
+          <IconButton 
+            aria-label="delete" 
+            size="small" 
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
             <DeleteIcon />
           </IconButton>
         </Box>
       </Box>
 
-      {showInput && (
-        <Box>
-          <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-            <TextField
-              variant="outlined"
-              size="small"
-              fullWidth
-              placeholder="输入评论..."
-              // inputRef={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-            <input
-              type="file"
-              id="upload-image"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const formData = new FormData();
-                  formData.append("file", file);
-                  const imageUrl = await UpdateFileApi(formData);
-                  setImageList((prev) => [...prev, imageUrl]); // 更新 ImageList
-                }
-              }}
-            />
-            <label htmlFor="upload-image">
-              <IconButton component="span">
-                <AddPhotoAlternate />
-              </IconButton>
-            </label>
-            <Button variant="outlined" size="small" onClick={handleSendComment}>
-              发送
-            </Button>
-          </Box>
-          <Box>
-            <ImagePreview cols={3} width="200px" images={ImageList} handleDelete={handleDeleteImage} />
-          </Box>
-        </Box>
+      {isReplyVisible && (
+        <ReplyInput
+          onSubmit={handleReplySubmit}
+          onClose={() => setIsReplyVisible(false)}
+        />
       )}
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
+      <Dialog 
+        open={isDeleteDialogOpen} 
+        onClose={() => setIsDeleteDialogOpen(false)}
+      >
         <DialogTitle>是否删除该评论？</DialogTitle>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>取消</Button>
-          <Button onClick={handleConfirmDelete} color="error">
+          <Button onClick={() => setIsDeleteDialogOpen(false)}>取消</Button>
+          <Button onClick={handleDeleteComment} color="error">
             删除
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
-  )};
+  );
 
   return (
     <ListItem
@@ -226,8 +274,8 @@ const CommentItem: FC<CommentItemProps> = ({
         <Avatar src={comment.avatarUrl} alt={comment.username} />
       </ListItemAvatar>
       <ListItemText
-        primary={<Primary />}
-        secondary={<Secondary />}
+        primary={renderCommentHeader()}
+        secondary={renderCommentContent()}
         slots={{ secondary: "div", primary: "div" }}
       />
     </ListItem>

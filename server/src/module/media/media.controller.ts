@@ -24,12 +24,12 @@ export class MediaController {
     return this.mediaService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Post('update/:id')
   update(@Param('id') id: string, @Body() updateMediaDto: UpdateMediaDto) {
     return this.mediaService.update(+id, updateMediaDto);
   }
 
-  @Delete(':id')
+  @Post('delete/:id')
   remove(@Param('id') id: string) {
     return this.mediaService.remove(+id);
   }

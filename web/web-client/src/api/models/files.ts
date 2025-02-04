@@ -1,14 +1,4 @@
-export interface Response<T> {
-    /**
-     * 状态码
-     */
-    code: number;
-    data: T;
-    /**
-     * 信息
-     */
-    message: string;
-}
+
 
 export interface FsGetRes {
     /**
@@ -83,7 +73,7 @@ export interface FsListRes {
     /**
      * 内容
      */
-    content: ContentRes[];
+    content: ContentVO[];
     header: string;
     provider: string;
     /**
@@ -100,7 +90,7 @@ export interface FsListRes {
     write: boolean;
 }
 
-export interface ContentRes {
+export interface ContentVO {
     /**
      * 创建时间
      */
