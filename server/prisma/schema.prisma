@@ -19,7 +19,7 @@ model Comment {
   mediaId   Int
   isEdited  Boolean   @default(false)
   imageUrls String
-  timestamp Int
+  timestamp Float     @default(0) @db.Float
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
   deletedAt DateTime?

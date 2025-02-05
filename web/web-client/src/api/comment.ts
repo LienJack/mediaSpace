@@ -40,7 +40,7 @@ export interface AddCommentReq {
      */
     mediaId: number;
     /**
-     * 视频时间戳
+     * 视频时间戳（支持浮点数）
      */
     timestamp: number;
     userId: number;

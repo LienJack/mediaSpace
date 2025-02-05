@@ -27,7 +27,6 @@ export class Comment {
     imageUrls!: string;
 
     @IsDefined()
-    @IsInt()
     timestamp!: number;
 
     @IsDefined()

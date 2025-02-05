@@ -3,14 +3,9 @@ import {
   TextField,
   Button,
   Box,
-  IconButton,
-  Snackbar,
-  Alert,
   Typography,
 } from "@mui/material";
 import {
-  Close as CloseIcon,
-  AttachFile as AttachFileIcon,
   Send as SendIcon,
 } from "@mui/icons-material";
 import { useCommentStore } from "@/store/commentStore";
@@ -21,6 +16,13 @@ import { useParams } from "next/navigation";
 import ImagePreview from "@/components/ImagePreview";
 import { ImageFile } from "@/components/ImageUpdate";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import toast from 'react-hot-toast';
+
+// 新增常量
+const TOAST_CONFIG = {
+  position: 'bottom-right' as const,
+  duration: 3000
+};
 
 export const TextEditor = () => {
   // 状态管理
@@ -28,8 +30,6 @@ export const TextEditor = () => {
   const mediaId = Number(params.id);
   const [content, setContent] = useState("");
   const [images, setImages] = useState<ImageFile[]>([]);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   // Store hooks
   const { setComments } = useCommentStore();
@@ -39,44 +39,42 @@ export const TextEditor = () => {
   // 使用图片上传Hook
   const { handlePaste, handleDeleteImage, dropzoneProps } = useImageUpload({
     setImages,
-    onSuccess: () => {
-      setSnackbarMessage("图片已成功上传");
-      setSnackbarOpen(true);
-    },
-    onError: () => {
-      setSnackbarMessage("图片上传失败");
-      setSnackbarOpen(true);
-    },
+    onSuccess: () => toast.success('图片已成功上传', TOAST_CONFIG),
+    onError: () => toast.error('图片上传失败', TOAST_CONFIG),
   });
 
-  // 发送评论
-  const handleSubmit = async () => {
+  // 处理评论提交
+  const handleSubmit = async (): Promise<void> => {
     if (!content.trim() && images.length === 0) return;
     if (!player) return;
+    if (!user?.id) throw new Error('用户未登录');
 
-    if (!user?.id) {
-      throw new Error('用户未登录');
+    try {
+      const newComment: AddCommentReq = {
+        content: content.trim(),
+        imageUrls: images.map(img => img.rawUrl),
+        timestamp: player.getCurrentTime(),
+        mediaId,
+        userId: user.id,
+      };
+
+      await addCommentApi(newComment);
+      const comments = await getCommentListApi(mediaId);
+      
+      // 重置状态
+      setContent('');
+      setImages([]);
+      setComments(comments);
+      
+      toast.success('评论已成功发送', TOAST_CONFIG);
+    } catch (error) {
+      toast.error('评论发送失败', TOAST_CONFIG);
     }
-
-    const newComment: AddCommentReq = {
-      content: content.trim(),
-      imageUrls: images.map(img => img.rawUrl),
-      timestamp: Math.round(player.getCurrentTime()),
-      mediaId: mediaId,
-      userId: user.id,
-    };
-
-    await addCommentApi(newComment);
-    const comments = await getCommentListApi(mediaId);
-    setContent("");
-    setImages([]);
-    setComments(comments);
   };
 
   // 处理键盘事件
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (e.key === 'Enter') {
-      // 使用 metaKey (Mac的Command键) 或 ctrlKey (Windows的Control键)
       if (e.metaKey || e.ctrlKey) {
         // Command/Control + Enter: 插入换行
         setContent(prev => prev + '\n');
@@ -134,41 +132,6 @@ export const TextEditor = () => {
             发送
         </Button>
 
-        {/* 工具栏 */}
-        {/* <Box className="flex items-center justify-between border-t p-2">
-          <Box className="flex gap-1">
-            <IconButton
-              size="small"
-              onClick={() => {}}
-              aria-label="关闭"
-            >
-              <CloseIcon />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-                input?.click();
-              }}
-              aria-label="附件"
-            >
-              <AttachFileIcon />
-            </IconButton>
-          </Box>
-
-          <Button
-            variant="contained"
-            size="small"
-            endIcon={<SendIcon />}
-            onClick={handleSubmit}
-            disabled={!content.trim()}
-            className="ml-2"
-          >
-            发送
-          </Button>
-        </Box> */}
-
         {/* 上传图片展示 */}
         {images.length > 0 && (
           <Box className="p-2">
@@ -201,18 +164,6 @@ export const TextEditor = () => {
           </Box>
         )}
       </div>
-
-      {/* 提示信息 */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="success">
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </div>
   );
 };

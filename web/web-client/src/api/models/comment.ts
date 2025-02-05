@@ -45,7 +45,7 @@ export interface CommentVO {
      */
     content: string;
     /**
-     * 视频时间戳
+     * 视频时间戳（支持浮点数）
      * @type {number}
      * @memberof CommentVO
      */

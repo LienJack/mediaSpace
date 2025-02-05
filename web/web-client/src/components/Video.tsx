@@ -249,7 +249,7 @@ const Video = ({
           overflowX: 'auto',
           pb: 1
         }}>
-          {sortedDots.map((dot, index) => (
+          {sortedDots.reverse().map((dot, index) => (
             <Box 
               key={dot.id}
               sx={{ 

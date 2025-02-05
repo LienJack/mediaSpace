@@ -4,7 +4,7 @@ import {
   IsString,
   IsArray,
   IsNotEmpty,
-  isNumber,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateCommentDto {
@@ -28,7 +28,7 @@ export class CreateCommentDto {
   imageUrls: string[] = [];
 
   @IsDefined()
-  @IsInt()
+  @IsNumber()
   @IsNotEmpty()
   timestamp!: number;
 }
