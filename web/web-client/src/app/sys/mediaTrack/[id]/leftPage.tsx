@@ -72,7 +72,7 @@ export default function LeftPage({ media }: { media?: Media }) {
       avatar: comment.avatarUrl,
       comment: comment.content,
       images: comment.imageUrls,
-      createdAt: new Date(),
+      createdAt: new Date(comment.createdAt || ""),
     }));
 
     setProgressDot(newProgressDots);

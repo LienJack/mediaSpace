@@ -238,7 +238,13 @@ const Video = ({
   const CustomTooltip = ({ dots }: { dots: ProgressDot[] }) => {
     // 按创建时间排序
     const sortedDots = [...dots].sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      // (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) => {
+        if (a.time !== b.time) {
+          return a.time - b.time;
+        }
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
     );
 
     return (
@@ -249,11 +255,12 @@ const Video = ({
           overflowX: 'auto',
           pb: 1
         }}>
-          {sortedDots.reverse().map((dot, index) => (
+          {sortedDots.map((dot, index) => (
             <Box 
               key={dot.id}
               sx={{ 
-                minWidth: 250,
+                minWidth: 120,
+                maxWidth: 200,
                 borderRight: index < sortedDots.length - 1 ? 1 : 0,
                 borderColor: 'divider',
                 pr: 2

@@ -60,7 +60,7 @@ const CommentGroup: FC<CommentGroupProps> = ({
       </Typography>
       
       <List sx={{ p: 0 }} component="div">
-        {comments.map((comment) => {
+        {comments.sort((a, b) => new Date(a.createdAt || "").getTime() - new Date(b.createdAt || "").getTime()).map((comment) => {
           // 验证评论对象的必要属性
           if (!comment || typeof comment !== 'object' || !comment.id) {
             return null;
