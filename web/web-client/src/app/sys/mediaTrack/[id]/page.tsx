@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useParams, notFound } from 'next/navigation';
-import { Stack, IconButton, CircularProgress } from '@mui/material';
+import { useParams, notFound } from "next/navigation";
+import { Stack, IconButton, CircularProgress } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useCommentStore } from '@/store/commentStore';
-import { getCommentListApi } from '@/api/comment';
-import { useRequest } from 'ahooks';
-import { getMediaApi } from '@/api/media';
-import LeftPage from './leftPage';
-import RightPage from './rightPage';
-import type { Media } from '@/types/media.ds';
-import type { Comment } from '@/types/comment';
-import { motion, AnimatePresence } from 'framer-motion';
-import MenuIcon from '@mui/icons-material/Menu';
-import { toast } from 'react-hot-toast';
+import { useCommentStore } from "@/store/commentStore";
+import { getCommentListApi } from "@/api/comment";
+import { useRequest } from "ahooks";
+import { getMediaApi } from "@/api/media";
+import LeftPage from "./leftPage";
+import RightPage from "./rightPage";
+import type { Media } from "@/types/media.ds";
+import type { Comment } from "@/types/comment";
+import { motion, AnimatePresence } from "framer-motion";
+import MenuIcon from "@mui/icons-material/Menu";
+import { toast } from "react-hot-toast";
 /**
  * 媒体轨道页面组件
  * 用于展示媒体内容和相关评论的页面
@@ -24,38 +24,46 @@ const MediaTrackPage = () => {
   const { id } = useParams<{ id: string }>();
   const mediaId = Number(id);
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
+  const [previousComments, setPreviousComments] = useState<Comment[]>([]); // 用于存储上一次的评论数据
 
   // 评论状态管理
   const { setComments, clearComments } = useCommentStore();
 
   // 获取评论列表
-  const { 
-    loading: commentsLoading, 
-    run: fetchComments 
-  } = useRequest<Comment[], [number]>(
-    (mediaId: number) => getCommentListApi(mediaId),
+  const { run: fetchComments } = useRequest<Comment[], [number]>(
+    async (mediaId: number) => {
+      const currentComments = await getCommentListApi(mediaId);
+      // 只有当评论发生变化时才更新状态
+      if (JSON.stringify(currentComments) !== JSON.stringify(previousComments)) {
+        setComments(currentComments);
+        setPreviousComments(currentComments);
+      }
+      return currentComments;
+    },
     {
       manual: true,
-      onSuccess: (comments) => {
-        setComments(comments);
-      },
+      pollingInterval: 5000, // 每5秒轮询一次
+      pollingWhenHidden: false, // 当页面不可见时停止轮询
+      onError: (error) => {
+        toast.error("获取评论失败：" + error.message);
+      }
     }
   );
 
   // 获取媒体信息
-  const { 
+  const {
     data: mediaData,
     loading: mediaLoading,
-    error: mediaError
+    error: mediaError,
   } = useRequest<Media | null, [number]>(
     (mediaId: number) => getMediaApi(mediaId),
     {
       defaultParams: [mediaId],
       refreshDeps: [mediaId],
       onError: (error) => {
-        toast.error('获取媒体信息失败：' + error.message);
+        toast.error("获取媒体信息失败：" + error.message);
         notFound();
-      }
+      },
     }
   );
 
@@ -68,9 +76,13 @@ const MediaTrackPage = () => {
   }, [fetchComments, clearComments, mediaId]);
 
   // 加载状态
-  if (mediaLoading || commentsLoading) {
+  if (mediaLoading) {
     return (
-      <Stack justifyContent="center" alignItems="center" sx={{ height: '100vh' }}>
+      <Stack
+        justifyContent="center"
+        alignItems="center"
+        sx={{ height: "100vh" }}
+      >
         <CircularProgress />
       </Stack>
     );
@@ -82,28 +94,28 @@ const MediaTrackPage = () => {
   }
 
   return (
-    <Stack 
-      direction="row" 
-      spacing={2} 
-      sx={{ 
+    <Stack
+      direction="row"
+      spacing={2}
+      sx={{
         p: 2,
-        height: 'calc(100vh - 64px)',
-        position: 'relative',
+        height: "calc(100vh - 64px)",
+        position: "relative",
       }}
     >
       {/* 左侧区域 - 媒体播放和详情 */}
       <LeftPage media={mediaData} />
-      
+
       {/* 右侧区域切换按钮 */}
       <IconButton
         sx={{
-          position: 'absolute',
-          right: isRightPanelVisible ? 'calc(25% - 28px)' : '16px',
-          top: '16px',
+          position: "absolute",
+          right: isRightPanelVisible ? "calc(25% - 28px)" : "16px",
+          top: "16px",
           zIndex: 1200,
-          backgroundColor: 'background.paper',
+          backgroundColor: "background.paper",
           boxShadow: 2,
-          transition: 'right 0.3s ease-in-out',
+          transition: "right 0.3s ease-in-out",
         }}
         onClick={() => setIsRightPanelVisible(!isRightPanelVisible)}
       >
@@ -113,18 +125,18 @@ const MediaTrackPage = () => {
       <AnimatePresence>
         {isRightPanelVisible && (
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
             style={{
-              width: '400px', // 固定宽度
-              height: '100%',
-              position: 'relative',
-              overflow: 'hidden',
+              width: "400px", // 固定宽度
+              height: "100%",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <RightPage isLoading={commentsLoading} />
+            <RightPage isLoading={false} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -132,4 +144,4 @@ const MediaTrackPage = () => {
   );
 };
 
-export default MediaTrackPage; 
+export default MediaTrackPage;

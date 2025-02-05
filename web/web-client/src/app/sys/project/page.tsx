@@ -17,6 +17,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useRequest } from "ahooks";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { getMediaListApi, createMediaApi, updateMediaApi, deleteMediaApi } from "@/api/media";
 import { formatToMySQLDateTime } from "@/utils/time";
@@ -50,6 +51,14 @@ const PROJECT_TYPE_CONFIG = {
   2: { label: "线上", color: "secondary" },
   default: { label: "未知", color: "default" },
 } as const;
+
+// 动画配置
+const cardAnimation = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+  transition: { duration: 0.3 }
+};
 
 export default function ProjectPage() {
   const [isMediaFormOpen, setIsMediaFormOpen] = useState(false);
@@ -117,61 +126,69 @@ export default function ProjectPage() {
 
   const renderMediaCard = (media: Media) => (
     <Grid size={4} key={media.id}>
-      <Card
-        sx={{
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          transition: "transform 0.3s ease, box-shadow 0.3s ease",
-          "&:hover": {
-            transform: "translateY(-5px)",
-            boxShadow: 6,
-          },
-        }}
+      <motion.div
+        layout
+        initial={cardAnimation.initial}
+        animate={cardAnimation.animate}
+        exit={cardAnimation.exit}
+        transition={cardAnimation.transition}
       >
-        <CardContent sx={{ flexGrow: 1 }}>
-          <Typography variant="h5" component="h3" gutterBottom>
-            {media.name}
-          </Typography>
-          {renderMediaTypeChip(media.type)}
-          <Typography variant="body2" color="text.secondary">
-            {media.descript || "暂无描述"}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            创建: {media.createdAt ? formatToMySQLDateTime(new Date(media.createdAt)) : "未知时间"}
-          </Typography>
-          {media.updatedAt && (
-            <Typography variant="body2" color="text.secondary">
-              更新: {formatToMySQLDateTime(new Date(media.updatedAt))}
+        <Card
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+            "&:hover": {
+              transform: "translateY(-5px)",
+              boxShadow: 6,
+            },
+          }}
+        >
+          <CardContent sx={{ flexGrow: 1 }}>
+            <Typography variant="h5" component="h3" gutterBottom>
+              {media.name}
             </Typography>
-          )}
-        </CardContent>
-        <CardActions>
-          <Link href={`/sys/mediaTrack/${media.id}`} passHref>
-            <Button size="small" sx={{ ml: 1, mb: 1 }} variant="contained">
-              打开
+            {renderMediaTypeChip(media.type)}
+            <Typography variant="body2" color="text.secondary">
+              {media.descript || "暂无描述"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              创建: {media.createdAt ? formatToMySQLDateTime(new Date(media.createdAt)) : "未知时间"}
+            </Typography>
+            {media.updatedAt && (
+              <Typography variant="body2" color="text.secondary">
+                更新: {formatToMySQLDateTime(new Date(media.updatedAt))}
+              </Typography>
+            )}
+          </CardContent>
+          <CardActions>
+            <Link href={`/sys/mediaTrack/${media.id}`} passHref>
+              <Button size="small" sx={{ ml: 1, mb: 1 }} variant="contained">
+                打开
+              </Button>
+            </Link>
+            <Button
+              size="small"
+              onClick={() => handleEditMedia(media)}
+              sx={{ ml: 1, mb: 1 }}
+              variant="contained"
+              color="secondary"
+            >
+              编辑
             </Button>
-          </Link>
-          <Button
-            size="small"
-            onClick={() => handleEditMedia(media)}
-            sx={{ ml: 1, mb: 1 }}
-            variant="contained"
-            color="secondary"
-          >
-            编辑
-          </Button>
-          <Button
-            size="small"
-            onClick={() => handleDeleteMedia(media.id)}
-            sx={{ ml: 1, mb: 1 }}
-            variant="outlined"
-            color="error"
-          >
-            删除
-          </Button>
-        </CardActions>
-      </Card>
+            <Button
+              size="small"
+              onClick={() => handleDeleteMedia(media.id)}
+              sx={{ ml: 1, mb: 1 }}
+              variant="outlined"
+              color="error"
+            >
+              删除
+            </Button>
+          </CardActions>
+        </Card>
+      </motion.div>
     </Grid>
   );
 
@@ -210,13 +227,15 @@ export default function ProjectPage() {
           最近项目
         </Typography>
 
-        <Grid container spacing={3}>
-          {isLoading
-            ? Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-                <ProjectCardSkeleton key={index} />
-              ))
-            : mediaList.map(renderMediaCard)}
-        </Grid>
+        <AnimatePresence mode="popLayout">
+          <Grid container spacing={3}>
+            {isLoading
+              ? Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+                  <ProjectCardSkeleton key={index} />
+                ))
+              : mediaList.map(renderMediaCard)}
+          </Grid>
+        </AnimatePresence>
       </Container>
 
       <MediaForm 

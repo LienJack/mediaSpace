@@ -1,13 +1,6 @@
 import { useState, KeyboardEvent } from "react";
-import {
-  TextField,
-  Button,
-  Box,
-  Typography,
-} from "@mui/material";
-import {
-  Send as SendIcon,
-} from "@mui/icons-material";
+import { TextField, Button, Box, Typography } from "@mui/material";
+import { Send as SendIcon } from "@mui/icons-material";
 import { useCommentStore } from "@/store/commentStore";
 import { usePlayerStore } from "@/store/playerStore";
 import useUserStore from "@/store/userStore";
@@ -16,12 +9,12 @@ import { useParams } from "next/navigation";
 import ImagePreview from "@/components/ImagePreview";
 import { ImageFile } from "@/components/ImageUpdate";
 import { useImageUpload } from "@/hooks/useImageUpload";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 // 新增常量
 const TOAST_CONFIG = {
-  position: 'bottom-right' as const,
-  duration: 3000
+  position: "bottom-right" as const,
+  duration: 3000,
 };
 
 export const TextEditor = () => {
@@ -39,20 +32,20 @@ export const TextEditor = () => {
   // 使用图片上传Hook
   const { handlePaste, handleDeleteImage, dropzoneProps } = useImageUpload({
     setImages,
-    onSuccess: () => toast.success('图片已成功上传', TOAST_CONFIG),
-    onError: () => toast.error('图片上传失败', TOAST_CONFIG),
+    onSuccess: () => toast.success("图片已成功上传", TOAST_CONFIG),
+    onError: () => toast.error("图片上传失败", TOAST_CONFIG),
   });
 
   // 处理评论提交
   const handleSubmit = async (): Promise<void> => {
     if (!content.trim() && images.length === 0) return;
     if (!player) return;
-    if (!user?.id) throw new Error('用户未登录');
+    if (!user?.id) throw new Error("用户未登录");
 
     try {
       const newComment: AddCommentReq = {
         content: content.trim(),
-        imageUrls: images.map(img => img.rawUrl),
+        imageUrls: images.map((img) => img.rawUrl),
         timestamp: player.getCurrentTime(),
         mediaId,
         userId: user.id,
@@ -60,24 +53,24 @@ export const TextEditor = () => {
 
       await addCommentApi(newComment);
       const comments = await getCommentListApi(mediaId);
-      
+
       // 重置状态
-      setContent('');
+      setContent("");
       setImages([]);
       setComments(comments);
-      
-      toast.success('评论已成功发送', TOAST_CONFIG);
-    } catch (error) {
-      toast.error('评论发送失败', TOAST_CONFIG);
+
+      toast.success("评论已成功发送", TOAST_CONFIG);
+    } catch (error: unknown) {
+      toast.error("评论发送失败", error || "未知错误");
     }
   };
 
   // 处理键盘事件
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       if (e.metaKey || e.ctrlKey) {
         // Command/Control + Enter: 插入换行
-        setContent(prev => prev + '\n');
+        setContent((prev) => prev + "\n");
       } else {
         // 仅 Enter: 提交
         e.preventDefault();
@@ -89,9 +82,12 @@ export const TextEditor = () => {
   return (
     <div className="relative">
       {/* 拖拽区域 */}
-      <div {...dropzoneProps.getRootProps({
-        onClick: (e) => e.stopPropagation()
-      })} className="absolute inset-0 z-0">
+      <div
+        {...dropzoneProps.getRootProps({
+          onClick: (e) => e.stopPropagation(),
+        })}
+        className="absolute inset-0 z-0"
+      >
         <input {...dropzoneProps.getInputProps()} />
       </div>
 
@@ -116,37 +112,39 @@ export const TextEditor = () => {
           variant="standard"
           className="p-4"
           sx={{
-            '& .MuiInput-underline:before': { borderBottom: 'none' },
-            '& .MuiInput-underline:after': { borderBottom: 'none' },
-            '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottom: 'none' }
+            "& .MuiInput-underline:before": { borderBottom: "none" },
+            "& .MuiInput-underline:after": { borderBottom: "none" },
+            "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+              borderBottom: "none",
+            },
           }}
         />
         <Button
-            variant="contained"
-            size="small"
-            endIcon={<SendIcon />}
-            onClick={handleSubmit}
-            disabled={!content.trim()}
-            className="ml-2"
-          >
-            发送
+          variant="contained"
+          size="small"
+          endIcon={<SendIcon />}
+          onClick={handleSubmit}
+          disabled={!content.trim()}
+          className="ml-2"
+        >
+          发送
         </Button>
 
         {/* 上传图片展示 */}
         {images.length > 0 && (
           <Box className="p-2">
-            <ImagePreview 
+            <ImagePreview
               images={images
-                .filter(img => img.rawUrl && img.progress === 100)
-                .map(img => img.rawUrl)} 
-              width="100%" 
+                .filter((img) => img.rawUrl && img.progress === 100)
+                .map((img) => img.rawUrl)}
+              width="100%"
               cols={6}
               handleDelete={handleDeleteImage}
             />
             {/* 显示上传中的图片预览 */}
             <Box className="grid grid-cols-6 gap-2 mt-2">
               {images
-                .filter(img => !img.rawUrl || img.progress < 100)
+                .filter((img) => !img.rawUrl || img.progress < 100)
                 .map((img) => (
                   <Box key={img.preview} className="relative aspect-square">
                     <img
