@@ -9,3 +9,7 @@
 # 命令
 docker-compose up -d   
 docker-compose down
+重启后端
+docker-compose restart backend
+重启前端
+docker-compose restart frontend

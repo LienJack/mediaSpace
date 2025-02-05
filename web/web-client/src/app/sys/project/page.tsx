@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -15,14 +15,19 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { useRequest } from "ahooks";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import dynamic from "next/dynamic";
 
 import { getMediaListApi, createMediaApi, updateMediaApi, deleteMediaApi } from "@/api/media";
 import { formatToMySQLDateTime } from "@/utils/time";
 import MediaForm from "@/components/MediaForm";
 import type { Media } from "@/types/media.ds";
+
+// 动态导入动画组件，确保客户端渲染
+const NoSSR = dynamic(() => import("@/components/NoSSR"), { 
+  ssr: false,
+  loading: () => <p>Loading...</p>
+});
 
 // 类型定义
 interface ProjectCardSkeletonProps {
@@ -63,15 +68,32 @@ const cardAnimation = {
 export default function ProjectPage() {
   const [isMediaFormOpen, setIsMediaFormOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mediaList, setMediaList] = useState<Media[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 获取项目列表
-  const {
-    loading: isLoading,
-    data: mediaList = [],
-    run: refreshMediaList,
-  } = useRequest(getMediaListApi, {
-    loadingDelay: 100,
-  });
+  // 替换 useRequest 的数据获取逻辑
+  const fetchMediaList = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getMediaListApi();
+      setMediaList(data);
+    } catch (error) {
+      console.error('Failed to fetch media list:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 确保组件只在客户端渲染
+  useEffect(() => {
+    setIsMounted(true);
+    fetchMediaList();
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
 
   // 处理函数
   const handleOpenMediaForm = () => {
@@ -90,25 +112,33 @@ export default function ProjectPage() {
   };
 
   const handleDeleteMedia = async (mediaId: number) => {
-    await deleteMediaApi(mediaId);
-    refreshMediaList();
+    try {
+      await deleteMediaApi(mediaId);
+      await fetchMediaList();
+    } catch (error) {
+      console.error('Failed to delete media:', error);
+    }
   };
 
   const handleSubmitMedia = async (mediaData: Media) => {
-    const payload = {
-      name: mediaData.name,
-      path: mediaData.path,
-      descript: mediaData.descript,
-      type: mediaData.type,
-    };
+    try {
+      const payload = {
+        name: mediaData.name,
+        path: mediaData.path,
+        descript: mediaData.descript,
+        type: mediaData.type,
+      };
 
-    if (selectedMedia) {
-      await updateMediaApi(selectedMedia.id, payload);
-    } else {
-      await createMediaApi(payload);
+      if (selectedMedia) {
+        await updateMediaApi(selectedMedia.id, payload);
+      } else {
+        await createMediaApi(payload);
+      }
+      await fetchMediaList();
+      handleCloseMediaForm();
+    } catch (error) {
+      console.error('Failed to submit media:', error);
     }
-    refreshMediaList();
-    handleCloseMediaForm();
   };
 
   // 渲染函数
@@ -126,13 +156,7 @@ export default function ProjectPage() {
 
   const renderMediaCard = (media: Media) => (
     <Grid size={4} key={media.id}>
-      <motion.div
-        layout
-        initial={cardAnimation.initial}
-        animate={cardAnimation.animate}
-        exit={cardAnimation.exit}
-        transition={cardAnimation.transition}
-      >
+      <NoSSR fallback={<ProjectCardSkeleton key={media.id} />}>
         <Card
           sx={{
             height: "100%",
@@ -188,7 +212,7 @@ export default function ProjectPage() {
             </Button>
           </CardActions>
         </Card>
-      </motion.div>
+      </NoSSR>
     </Grid>
   );
 
@@ -217,7 +241,7 @@ export default function ProjectPage() {
             variant="contained"
             size="large"
             startIcon={<RefreshIcon />}
-            onClick={refreshMediaList}
+            onClick={fetchMediaList}
           >
             刷新
           </Button>
@@ -227,7 +251,13 @@ export default function ProjectPage() {
           最近项目
         </Typography>
 
-        <AnimatePresence mode="popLayout">
+        <NoSSR fallback={
+          <Grid container spacing={3}>
+            {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+              <ProjectCardSkeleton key={index} />
+            ))}
+          </Grid>
+        }>
           <Grid container spacing={3}>
             {isLoading
               ? Array.from({ length: SKELETON_COUNT }).map((_, index) => (
@@ -235,7 +265,7 @@ export default function ProjectPage() {
                 ))
               : mediaList.map(renderMediaCard)}
           </Grid>
-        </AnimatePresence>
+        </NoSSR>
       </Container>
 
       <MediaForm 

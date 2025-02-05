@@ -1,48 +1,61 @@
 #MySQL
 services:
   mysql:
-    image: mysql:8.0.31
+    image: mysql:8.0
     container_name: media-mysql
     environment:
       TZ: Asia/Shanghai
       MYSQL_ROOT_PASSWORD: root # root密码(修改要同时修改data/mysql/init/init.sql中的密码)
-      MYSQL_DATABASE: media_track
+      MYSQL_DATABASE: mediaspace
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
     restart: on-failure
     volumes:
-      - ./data/mysql/db:/var/lib/mysql
-      - ./data/mysql/init:/docker-entrypoint-initdb.d/
+      - ./data/mysql/data:/var/lib/mysql
+      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "3307:3306"
+      - "3307:3306"  # 修改回3307:3306
     command:
       # 将mysql8.0默认密码策略 修改为 原先 策略 (mysql8.0对其默认策略做了更改 会导致密码无法匹配)
       --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --explicit_defaults_for_timestamp=true --lower_case_table_names=1
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
   #Redis
   redis:
-    image: redis
+    image: redis:alpine
     container_name: media-redis
     command: redis-server --requirepass root # requirepass后为密码(可修改)
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
-      - ./data/redis:/data
+      - redis_data:/data
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
     environment:
       PMA_HOST: mysql
-      PMA_PORT: mysql
+      PMA_PORT: 3306
     ports:
       - "8081:80" # 访问 phpMyAdmin 的端口
     depends_on:
       - mysql
   nginx:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: media-nginx
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf # 挂载 Nginx 配置文件
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    restart: always
   alist:
     image: xhofe/alist:latest
     container_name: alist
@@ -57,6 +70,59 @@ services:
       - TZ=Asia/Shanghai
       - ALIST_ADMIN_USER=admin
       - ALIST_ADMIN_PASSWORD=admin
+      - ALIST_DB_TYPE=mysql
+      - ALIST_DB_HOST=mysql
+      - ALIST_DB_PORT=3306
+      - ALIST_DB_USER=root
+      - ALIST_DB_PASS=root
+      - ALIST_DB_NAME=mediaspace
+      - ALIST_DB_TABLE_PREFIX=alist_
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     restart: always
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: media-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=mysql://root:root@mysql:3306/mediaspace?connection_limit=5  # 这里保持3306，因为是容器内部通信
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: always
+
+  frontend:
+    build:
+      context: ./web/web-client
+      dockerfile: Dockerfile
+    container_name: media-frontend
+    expose:
+      - "8000"
+    environment:
+      - NEXT_PUBLIC_API_URL=/api
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - CI=true
+      - SKIP_TYPE_CHECK=true
+    depends_on:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mysql_data:
+  redis_data:

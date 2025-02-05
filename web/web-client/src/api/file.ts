@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosProgressEvent } from "axios";
 import { alistBaseUrl, fileImagePath } from "@/utils/env"
 import { FsGetRes, FsListReq, FsListRes } from "./models/files";
+import toast from 'react-hot-toast';
 
 /**
  * 定义API响应类型
@@ -62,8 +63,10 @@ export const loginToAlist = async (): Promise<string> => {
         sessionStorage.setItem('alsitToken', token);
         return token;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '登录获取token失败';
+        toast.error(errorMessage);
         console.error('登录失败:', error);
-        throw new Error('登录获取token失败');
+        throw new Error(errorMessage);
     }
 };
 
@@ -143,6 +146,8 @@ export const getFileDetail = async (filePath: string): Promise<ApiResponse<FsGet
         });
         return response.data;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '获取文件详情失败';
+        toast.error(errorMessage);
         console.error('获取文件详情失败:', error);
         throw error;
     }
@@ -160,7 +165,9 @@ export const uploadFile = async (
 ): Promise<string> => {
     const file = formData.get("file") as File;
     if (!file) {
-        throw new Error('未找到上传文件');
+        const errorMessage = '未找到上传文件';
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
     }
 
     const fileName = file.name;
@@ -179,6 +186,8 @@ export const uploadFile = async (
 
         return `/p${filePath}`;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '文件上传失败';
+        toast.error(errorMessage);
         console.error('文件上传失败:', error);
         throw error;
     }
@@ -194,6 +203,8 @@ export const getFileList = async (params: FsListReq): Promise<ApiResponse<FsList
         const response = await instance.post<ApiResponse<FsListRes>>('/fs/list', params);
         return response.data;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '获取文件列表失败';
+        toast.error(errorMessage);
         console.error('获取文件列表失败:', error);
         throw error;
     }

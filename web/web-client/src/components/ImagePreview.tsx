@@ -1,4 +1,6 @@
-import { FC, useState } from "react";
+'use client'
+
+import { FC, useState, useEffect } from "react";
 // import Image from 'next/image';
 import {
   Dialog,
@@ -27,37 +29,76 @@ const ImagePreview: FC<ImagePreviewProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 确保组件只在客户端渲染
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null; // 或者返回一个加载占位符
+  }
 
   const handleImageClick = (image: string) => {
     setSelectedImage(image);
     setOpen(true);
   };
 
+  const handleClose = () => setOpen(false);
+
+  const handleDeleteClick = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    handleDelete?.(index);
+  };
+
   return (
     <>
-      <ImageList sx={{ width, overflow: "hidden" }} cols={cols} rowHeight={rowHeight}>
+      <ImageList 
+        sx={{ 
+          width, 
+          overflow: "hidden",
+          m: 0 // 移除默认外边距
+        }} 
+        cols={cols} 
+        rowHeight={rowHeight}
+      >
         {images.map((image, index) => (
           <ImageListItem
             key={index}
             sx={{
               cursor: "pointer",
               "&:hover": { opacity: 0.8 },
+              position: "relative"
             }}
             onClick={() => handleImageClick(image)}
           >
             <img
               src={image}
-              alt={`评论图片 ${index + 1}`}
-              sizes="100px"
-              style={{ objectFit: "cover" }}
+              alt={`预览图片 ${index + 1}`}
+              loading="lazy"
+              style={{ 
+                width: "100%",
+                height: "100%",
+                objectFit: "cover"
+              }}
             />
             {handleDelete && (
               <IconButton
-                sx={{ position: "absolute", top: -8, right: -10 }}
-                onClick={(e) => { e.stopPropagation(); handleDelete(index); }}
+                size="small"
+                sx={{
+                  position: "absolute",
+                  top: 2,
+                  right: 2,
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  }
+                }}
+                onClick={(e) => handleDeleteClick(e, index)}
                 color="error"
               >
-                <DeleteIcon />
+                <DeleteIcon fontSize="small" />
               </IconButton>
             )}
           </ImageListItem>
@@ -66,26 +107,51 @@ const ImagePreview: FC<ImagePreviewProps> = ({
 
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="lg"
-        fullWidth
+        onClose={handleClose}
+        maxWidth={false}
+        PaperProps={{
+          sx: {
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+          }
+        }}
       >
-        <IconButton
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            zIndex: 1000,
+        <DialogContent 
+          sx={{ 
+            p: 0,
+            position: "relative",
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'transparent'
           }}
-          onClick={() => setOpen(false)}
         >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent sx={{ p: 0, position: "relative", height: "70vh" }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
           <img
             src={selectedImage}
             alt="预览图片"
-            style={{ height: "100%", objectFit: "contain" }}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '85vh',
+              objectFit: 'contain',
+              borderRadius: '4px'
+            }}
           />
         </DialogContent>
       </Dialog>

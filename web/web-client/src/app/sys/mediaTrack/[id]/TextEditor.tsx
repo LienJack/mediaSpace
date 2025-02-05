@@ -58,8 +58,6 @@ export const TextEditor = () => {
       setContent("");
       setImages([]);
       setComments(comments);
-
-      toast.success("评论已成功发送", TOAST_CONFIG);
     } catch (error: unknown) {
       toast.error("评论发送失败", error || "未知错误");
     }
