@@ -63,7 +63,7 @@ CREATE TABLE Comment (
 
 -- 检查并插入admin用户
 INSERT INTO user (name, account, avatarUrl)
-SELECT 'admin', 'admin', ''
+SELECT 'admin', 'admin', 'https://avatars.githubusercontent.com/u/54362992'
 WHERE NOT EXISTS (
     SELECT 1 FROM user WHERE name = 'admin'
 );
