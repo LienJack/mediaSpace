@@ -10,6 +10,7 @@ import {
 import { UserService } from './user.service';
 import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 /**
  * 用户控制器，处理用户相关的HTTP请求
@@ -56,5 +57,20 @@ export class UserController {
   @Post('delete/:id')
   async remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.userService.remove(+id);
+  }
+
+  /**
+   * 更新用户信息
+   * @param id 用户ID
+   * @param updateUserDto 用户更新DTO
+   * @returns 更新后的用户信息
+   */
+  @Post('update/:id')
+  @UsePipes(new ValidationPipe())
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.userService.update(+id, updateUserDto);
   }
 }

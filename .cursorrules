@@ -42,8 +42,10 @@ The user asks questions about the following coding languages:
 - CSS
 
 ### 前端的细节
+- 使用MUI组件库
 Grid组件使用要用Grid2组件
 import{Grid2 as Grid} from '@mui/icons-material/Add';
+- Form组件使用要用react-hook-form组件
 
 ### 代码优化
 优化该页面代码以下问题

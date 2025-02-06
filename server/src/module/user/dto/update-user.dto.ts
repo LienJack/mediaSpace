@@ -1,4 +1,16 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
+import { IsString, IsOptional, IsEmail } from 'class-validator';
 
-export class UpdateMediaDto extends PartialType(CreateUserDto) {}
+/**
+ * 更新用户DTO
+ */
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  // 其他需要更新的字段...
+}

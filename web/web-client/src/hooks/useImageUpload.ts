@@ -5,7 +5,7 @@ import { ImageFile } from '@/components/ImageUpdate';
 
 interface UseImageUploadProps {
   setImages: React.Dispatch<React.SetStateAction<ImageFile[]>>;
-  onSuccess?: () => void;
+  onSuccess?: (url: string) => void;
   onError?: (error: Error) => void;
 }
 
@@ -49,7 +49,7 @@ export const useImageUpload = ({
           return newImages;
         });
 
-        onSuccess?.();
+        onSuccess?.(url);
         return url;
       } catch (error) {
         console.error('图片上传失败:', error);

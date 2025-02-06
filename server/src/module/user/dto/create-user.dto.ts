@@ -3,6 +3,7 @@ import {
   IsDefined,
   IsString,
   IsNotEmpty,
+  IsOptional,
 } from 'class-validator';
 
 export class CreateUserDto implements Prisma.UserCreateInput {
@@ -18,6 +19,6 @@ export class CreateUserDto implements Prisma.UserCreateInput {
 
   @IsDefined()
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   avatarUrl!: string;
 }
