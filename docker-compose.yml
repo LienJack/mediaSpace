@@ -122,11 +122,10 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - NEXT_TELEMETRY_DISABLED=1
       - CI=true
-      - SKIP_TYPE_CHECK=true
     volumes:
-      - ./web/web-client:/app
-      - /app/node_modules
-    command: ${FRONTEND_CMD:-"npm run start"}
+      - ./web/web-client/.next:/app/.next
+      - ./web/web-client/public:/app/public
+    command: ["pnpm", "start", "-p", "8000"]
     depends_on:
       - backend
     restart: always
