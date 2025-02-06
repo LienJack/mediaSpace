@@ -97,9 +97,6 @@ services:
       - DATABASE_URL=mysql://root:root@mysql:3306/mediaspace?connection_limit=5  # 这里保持3306，因为是容器内部通信
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=${NODE_ENV:-production}
-    volumes:
-      - ./server:/app
-      - /app/node_modules
     command: ${BACKEND_CMD:-"npm run start:prod"}
     depends_on:
       mysql:
@@ -122,10 +119,6 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - NEXT_TELEMETRY_DISABLED=1
       - CI=true
-    volumes:
-      - ./web/web-client/.next:/app/.next
-      - ./web/web-client/public:/app/public
-    command: ["pnpm", "start", "-p", "8000"]
     depends_on:
       - backend
     restart: always
