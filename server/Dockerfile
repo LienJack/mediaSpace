@@ -24,7 +24,7 @@ RUN pnpm config set registry https://registry.npmmirror.com/
 COPY package*.json pnpm-lock.yaml ./
 
 # 全局安装prisma CLI
-RUN pnpm add -g prisma
+# RUN pnpm add -g prisma
 
 # 安装依赖
 RUN pnpm install

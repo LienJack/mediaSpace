@@ -37,7 +37,7 @@ CREATE TABLE Media (
     name VARCHAR(255) NOT NULL,
     path VARCHAR(255) NOT NULL,
     type TINYINT DEFAULT 1,
-    descript TEXT,
+    descript TEXT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP NULL,
     deletedAt TIMESTAMP NULL
