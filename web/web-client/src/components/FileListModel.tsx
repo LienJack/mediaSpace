@@ -74,7 +74,7 @@ const FileListModel: React.FC<FileListModelProps> = ({
     {
       defaultParams: [currentPathRef.current.join('/')],
       onSuccess: (response) => {
-        setFileList(response.data.content);
+        setFileList(response.data.content || []);
       }
     }
   );
