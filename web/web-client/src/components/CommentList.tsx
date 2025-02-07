@@ -126,7 +126,7 @@ const CommentList: FC<CommentListProps> = ({ onTimeClick }) => {
 
   // 渲染评论列表
   return (
-    <Box>
+    <Box sx={{ pb: 16 }}>
       {sortedTimestamps.map((timestamp) => (
         <CommentGroup
           key={timestamp}

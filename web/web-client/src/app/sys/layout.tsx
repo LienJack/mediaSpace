@@ -47,6 +47,8 @@ export default function RootLayout({
           account: user.account,
         };
         setUser(val);
+      } else {
+        router.push('/');
       }
     }
   }, []);
