@@ -36,13 +36,17 @@ check_docker_login() {
 build_and_push() {
     local version=$1
     
+    # 清理 Docker 构建缓存
+    print_info "清理 Docker 构建缓存..."
+    docker builder prune -f
+    
     # 构建后端镜像
     print_info "构建后端镜像..."
-    docker build -t lienjoe/mediaspace-backend:${version} -f server/Dockerfile ./server
+    docker build --no-cache -t lienjoe/mediaspace-backend:${version} -f server/Dockerfile ./server
     
     # 构建前端镜像
     print_info "构建前端镜像..."
-    docker build -t lienjoe/mediaspace-frontend:${version} -f web/web-client/Dockerfile ./web/web-client
+    docker build --no-cache -t lienjoe/mediaspace-frontend:${version} -f web/web-client/Dockerfile ./web/web-client
     
     # 推送镜像
     print_info "推送镜像到 Docker Hub..."
