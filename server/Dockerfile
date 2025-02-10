@@ -13,11 +13,13 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN apk add  curl git
 
 RUN npm config set registry https://registry.npmmirror.com/ 
+# RUN npm config set registry https://mirrors.aliyun.com/npm/
 # 安装pnpm
 RUN npm install -g pnpm@8.15.4
 
 # 配置镜像源
 RUN pnpm config set registry https://registry.npmmirror.com/
+# RUN pnpm config set registry https://mirrors.aliyun.com/
 
 
 # 复制package.json和pnpm-lock.yaml

@@ -61,7 +61,7 @@ build_and_push() {
 # 主函数
 main() {
     # 检查 Docker 登录状态
-    check_docker_login
+    # check_docker_login
     
     # 获取版本号（可选）
     version=${1:-latest}

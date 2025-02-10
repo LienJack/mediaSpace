@@ -20,12 +20,14 @@ RUN apk add curl git
 
 # 设置 npm 镜像
 RUN npm config set registry https://registry.npmmirror.com/ 
+# RUN npm config set registry https://mirrors.aliyun.com/
 
 # 安装 pnpm
 RUN npm install -g pnpm@8.15.4
     
 # 配置 pnpm 镜像源
 RUN pnpm config set registry https://registry.npmmirror.com/
+# RUN pnpm config set registry https://mirrors.aliyun.com/
 
 # 复制所有源代码
 COPY . .
