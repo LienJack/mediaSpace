@@ -75,7 +75,7 @@ export default function RightPage({ isLoading }: RightPageProps) {
                     sx={{
                       height: '100%',
                       overflowY: 'auto',
-                      pr: 1
+                      pr: 1,
                     }}
                   >
                     {isLoading ? (

@@ -1,6 +1,6 @@
-import { useState, KeyboardEvent } from "react";
-import { TextField, Button, Box, Typography } from "@mui/material";
-import { Send as SendIcon } from "@mui/icons-material";
+import { useState, KeyboardEvent, useRef } from "react";
+import { TextField, Button, Box, Typography, IconButton } from "@mui/material";
+import { Send as SendIcon, AttachFile as AttachFileIcon } from "@mui/icons-material";
 import { useCommentStore } from "@/store/commentStore";
 import { usePlayerStore } from "@/store/playerStore";
 import useUserStore from "@/store/userStore";
@@ -23,6 +23,7 @@ export const TextEditor = () => {
   const mediaId = Number(params.id);
   const [content, setContent] = useState("");
   const [images, setImages] = useState<ImageFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Store hooks
   const { setComments } = useCommentStore();
@@ -77,6 +78,30 @@ export const TextEditor = () => {
     }
   };
 
+  // 处理文件上传
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+    
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        handlePaste({
+          clipboardData: {
+            items: [{
+              type: file.type,
+              getAsFile: () => file
+            }]
+          }
+        } as unknown as React.ClipboardEvent);
+      }
+    });
+    
+    // 清空input的value，确保可以重复上传相同的文件
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="relative">
       {/* 拖拽区域 */}
@@ -117,11 +142,28 @@ export const TextEditor = () => {
             },
           }}
         />
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept="image/*"
+          multiple
+          className="hidden"
+        />
+        <IconButton
+          onClick={() => fileInputRef.current?.click()}
+          className="ml-2"
+          size="small"
+          sx={{ mr: 1 }}
+        >
+          <AttachFileIcon />
+        </IconButton>
         <Button
           variant="contained"
           size="small"
           endIcon={<SendIcon />}
           onClick={handleSubmit}
+          // 这里一定要有文字评论
           disabled={!content.trim()}
           className="ml-2"
         >

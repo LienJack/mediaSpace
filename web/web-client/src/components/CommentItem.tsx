@@ -19,6 +19,7 @@ import ImagePreview from "@/components/ImagePreview";
 import { useCommentStore } from "@/store/commentStore";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ChatIcon from "@mui/icons-material/Chat";
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import useUserStore from "@/store/userStore";
 import {
   addCommentApi,
@@ -37,26 +38,30 @@ interface CommentItemProps {
 
 interface ReplyInputProps {
   onSubmit: (content: string, imageUrls: string[]) => Promise<void>;
-  onClose: () => void;
+  replyImages: ImageFile[];
+  setReplyImages: React.Dispatch<React.SetStateAction<ImageFile[]>>;
+  handleDeleteImage: (index: number) => void;
+  handlePaste: (event: React.ClipboardEvent) => Promise<void>;
 }
 
-const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
+const ReplyInput: FC<ReplyInputProps> = ({ 
+  onSubmit, 
+  replyImages,
+  handleDeleteImage,
+  handlePaste
+}) => {
   const [replyContent, setReplyContent] = useState<string>("");
-  const [replyImages, setReplyImages] = useState<ImageFile[]>([]);
-
-  // 使用图片上传Hook
-  const { handlePaste, handleDeleteImage, dropzoneProps } = useImageUpload({
-    setImages: setReplyImages,
-    onError: () => console.error('上传图片失败'),
-  });
 
   const handleSubmit = async () => {
     if (replyContent.trim() === "") return;
     try {
-      await onSubmit(replyContent.trim(), replyImages.map(img => img.rawUrl));
+      await onSubmit(
+        replyContent.trim(), 
+        replyImages
+          .filter(img => img.rawUrl && img.progress === 100)
+          .map(img => img.rawUrl)
+      );
       setReplyContent("");
-      setReplyImages([]);
-      onClose();
     } catch (error) {
       console.error('提交回复失败:', error);
     }
@@ -64,21 +69,6 @@ const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
 
   return (
     <Box className="relative">
-      {/* 拖拽区域 */}
-      <div {...dropzoneProps.getRootProps({
-        onClick: (e) => e.stopPropagation()
-      })} className="absolute inset-0 z-0">
-        <input {...dropzoneProps.getInputProps()} />
-      </div>
-
-      {/* 拖拽提示 */}
-      {dropzoneProps.isDragActive && (
-        <Box className="absolute inset-0 bg-blue-50/80 flex items-center justify-center z-10 rounded">
-          <Typography variant="body2">放开以添加图片</Typography>
-        </Box>
-      )}
-
-      {/* 输入区域 */}
       <div className="relative z-1">
         <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
           <TextField
@@ -144,10 +134,22 @@ const ReplyInput: FC<ReplyInputProps> = ({ onSubmit, onClose }) => {
 const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isReplyVisible, setIsReplyVisible] = useState(false);
+  const [replyImages, setReplyImages] = useState<ImageFile[]>([]);
   const { setComments } = useCommentStore();
   const { user } = useUserStore();
   const params = useParams();
   const mediaId = params.id as string;
+
+  // 使用图片上传Hook
+  const { handlePaste, handleDeleteImage } = useImageUpload({
+    setImages: setReplyImages,
+    onSuccess: async () => {
+      // 上传成功后刷新评论列表
+      const updatedComments = await getCommentListApi(Number(mediaId));
+      setComments(updatedComments);
+    },
+    onError: () => console.error('上传图片失败'),
+  });
 
   // 验证评论对象的必要属性
   if (!comment || typeof comment !== 'object' || !comment.id) {
@@ -194,6 +196,39 @@ const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
     } catch (error) {
       console.error('提交回复失败:', error);
     }
+  };
+
+  const handleImageUpload = () => {
+    // 打开回复框
+    setIsReplyVisible(true);
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const files = (e.target as HTMLInputElement).files;
+      if (files) {
+        const fileArray = Array.from(files);
+        try {
+          await Promise.all(fileArray.map(file => {
+            const formData = new FormData();
+            formData.append('file', file);
+            return handlePaste({
+              clipboardData: {
+                items: [{
+                  type: file.type,
+                  getAsFile: () => file
+                }]
+              }
+            } as unknown as React.ClipboardEvent);
+          }));
+        } catch (error) {
+          console.error('上传图片失败:', error);
+        }
+      }
+    };
+    input.click();
   };
 
   const renderCommentHeader = () => (
@@ -254,6 +289,13 @@ const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
           >
             <ChatIcon />
           </IconButton>
+          <IconButton
+            aria-label="upload"
+            size="small"
+            onClick={handleImageUpload}
+          >
+            <AttachFileIcon />
+          </IconButton>
           <IconButton 
             aria-label="delete" 
             size="small" 
@@ -263,13 +305,6 @@ const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
           </IconButton>
         </Box>
       </Box>
-
-      {isReplyVisible && (
-        <ReplyInput
-          onSubmit={handleReplySubmit}
-          onClose={() => setIsReplyVisible(false)}
-        />
-      )}
 
       <Dialog 
         open={isDeleteDialogOpen} 
@@ -305,7 +340,24 @@ const CommentItem: FC<CommentItemProps> = ({ comment, onTimeClick }) => {
       </ListItemAvatar>
       <ListItemText
         primary={renderCommentHeader()}
-        secondary={renderCommentContent()}
+        secondary={
+          <Box>
+            {renderCommentContent()}
+            {isReplyVisible && (
+              <ReplyInput
+                onSubmit={async (content, imageUrls) => {
+                  await handleReplySubmit(content, imageUrls);
+                  setReplyImages([]); // 清空图片
+                  setIsReplyVisible(false); // 关闭回复框
+                }}
+                replyImages={replyImages}
+                setReplyImages={setReplyImages}
+                handleDeleteImage={handleDeleteImage}
+                handlePaste={handlePaste}
+              />
+            )}
+          </Box>
+        }
         slots={{ secondary: "div", primary: "div" }}
       />
     </ListItem>

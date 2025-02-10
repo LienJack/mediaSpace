@@ -26,6 +26,7 @@ show_help() {
     echo "  --dev     使用开发环境配置"
     echo "  --prod    使用生产环境配置（默认）"
     echo "  --build   重新构建容器"
+    echo "  --update  更新代码（从git仓库拉取最新代码）"
     echo "  --help    显示此帮助信息"
     echo
     echo "示例:"
@@ -33,11 +34,13 @@ show_help() {
     echo "  ./run.sh --dev            启动开发环境（不重新构建）"
     echo "  ./run.sh --prod --build   构建并启动生产环境"
     echo "  ./run.sh                  启动生产环境（不重新构建）"
+    echo "  ./run.sh --update         更新代码并启动"
 }
 
 # 初始化默认值
 ENV="prod"
 BUILD=false
+UPDATE=false
 
 # 检查并创建alist文件夹及其结构
 check_and_create_alist() {
@@ -65,17 +68,50 @@ check_and_create_alist() {
     fi
 }
 
+# 添加git更新函数
+update_code() {
+    print_info "正在从git仓库main分支拉取最新代码..."
+    
+    # 检查当前分支
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$current_branch" != "main" ]; then
+        print_warning "当前不在main分支，正在切换到main分支..."
+        if ! git checkout main; then
+            print_error "切换到main分支失败"
+            exit 1
+        fi
+    fi
+    
+    # 设置上游分支并拉取
+    if ! git branch --set-upstream-to=origin/main main 2>/dev/null; then
+        print_info "上游分支已设置"
+    fi
+    
+    if git pull origin main; then
+        print_info "代码更新成功"
+    else
+        print_error "代码更新失败"
+        exit 1
+    fi
+}
+
 # 解析命令行参数
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dev) ENV="dev" ;;
         --prod) ENV="prod" ;;
         --build) BUILD=true ;;
+        --update) UPDATE=true ;;
         --help) show_help; exit 0 ;;
         *) print_error "未知参数: $1"; show_help; exit 1 ;;
     esac
     shift
 done
+
+# 如果需要更新代码
+if [ "$UPDATE" = true ]; then
+    update_code
+fi
 
 # 检查必要的配置文件是否存在
 check_config_files() {
