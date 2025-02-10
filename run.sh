@@ -89,6 +89,7 @@ check_config_files() {
 # 根据环境设置变量
 if [ "$ENV" = "dev" ]; then
     print_info "使用开发环境配置..."
+    COMPOSE_FILE="docker-compose.dev.yml"
     export NGINX_CONF=nginx.dev.conf
     export NODE_ENV=development
     export BACKEND_CMD="npm run start:dev"
@@ -99,6 +100,7 @@ if [ "$ENV" = "dev" ]; then
     check_config_files
 else
     print_info "使用生产环境配置..."
+    COMPOSE_FILE="docker-compose.prod.yml"
     export NGINX_CONF=nginx.prod.conf
     export NODE_ENV=production
     export BACKEND_CMD="npm run start:prod"
@@ -109,23 +111,33 @@ else
     check_config_files
 fi
 
+# 检查 docker-compose 配置文件是否存在
+if [ ! -f "$COMPOSE_FILE" ]; then
+    print_error "找不到 ${COMPOSE_FILE} 配置文件"
+    exit 1
+fi
+
 # 如果需要构建
 if [ "$BUILD" = true ]; then
     print_info "开始构建${ENV}环境..."
     
     # 停止并删除现有容器
     print_info "停止并删除现有容器..."
-    docker-compose down
-    
-    # 清理Docker缓存（可选）
+    docker compose -f "${COMPOSE_FILE}" down
+
     if [ "$ENV" = "prod" ]; then
+        # 构建生产环境容器
+        print_info "构建生产环境容器..."
+        docker compose -f "${COMPOSE_FILE}" build --no-cache
+        
+        # 清理Docker缓存
         print_info "清理Docker缓存..."
         docker system prune -f
+    else
+        # 构建开发环境容器
+        print_info "构建开发环境容器..."
+        docker compose -f "${COMPOSE_FILE}" build --no-cache
     fi
-    
-    # 构建容器
-    print_info "构建新容器..."
-    docker-compose build --no-cache
 fi
 
 # 检查并创建alist文件夹及其结构
@@ -135,18 +147,18 @@ check_and_create_alist
 print_info "启动${ENV}环境容器..."
 if [ "$ENV" = "dev" ]; then
     print_warning "开发环境启动，日志将实时显示..."
-    docker-compose up
+    docker compose -f "${COMPOSE_FILE}" up
 else
     print_info "生产环境启动，容器将在后台运行..."
-    docker-compose up -d
+    docker compose -f "${COMPOSE_FILE}" up -d
     
     # 显示容器状态
     print_info "容器状态："
-    docker-compose ps
+    docker compose -f "${COMPOSE_FILE}" ps
 fi
 
 # 捕获Ctrl+C信号
-trap 'print_info "正在关闭容器..."; docker-compose down' INT
+trap 'print_info "正在关闭容器..."; docker compose -f "${COMPOSE_FILE}" down' INT
 
 # 如果是开发环境，等待用户输入
 if [ "$ENV" = "dev" ]; then

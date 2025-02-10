@@ -15,8 +15,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // output: 'standalone',
   output: 'standalone',
+  experimental: {
+    // 禁用一些实验性功能
+    serverActions: false,
+  },
   // 禁用自动静态优化
   // staticPageGenerationTimeout: 1000,
   // reactStrictMode: true,

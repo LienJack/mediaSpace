@@ -1,8 +1,35 @@
+'use client';
+
+import { Stack, Typography, Button, Container } from '@mui/material';
+import Link from 'next/link';
+
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold mb-4">404</h1>
-      <p className="text-lg">项目不存在</p>
-    </div>
+    <Container maxWidth="sm">
+      <Stack 
+        spacing={3} 
+        alignItems="center" 
+        justifyContent="center" 
+        sx={{ 
+          minHeight: '100vh',
+          textAlign: 'center'
+        }}
+      >
+        <Typography variant="h1" component="h1">
+          404
+        </Typography>
+        <Typography variant="h5" color="text.secondary">
+          页面不存在
+        </Typography>
+        <Button
+          component={Link}
+          href="/"
+          variant="contained"
+          sx={{ minWidth: 120 }}
+        >
+          返回首页
+        </Button>
+      </Stack>
+    </Container>
   );
 } 

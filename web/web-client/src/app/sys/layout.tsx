@@ -1,5 +1,4 @@
 "use client";
-import ThemeRegistry from "@/components/ThemeRegistry";
 import { AppBar, Toolbar, Typography, Box, Avatar, IconButton, Button, Menu, MenuItem } from "@mui/material";
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -8,7 +7,6 @@ import useUserStore from '@/store/userStore';
 import { User } from '@/types/user';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
 
 export default function RootLayout({
   children,
@@ -52,7 +50,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <ThemeRegistry>
+    <>
       <AppBar position="fixed" color="primary">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -98,6 +96,6 @@ export default function RootLayout({
       <Box sx={{ marginTop: '64px' }}>
         {children}
       </Box>
-    </ThemeRegistry>
+    </>
   );
 }

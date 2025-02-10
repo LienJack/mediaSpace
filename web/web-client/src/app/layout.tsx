@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 // import { Inter } from "next/font/google";
 import "./globals.css";
-import ThemeRegistry from "@/components/ThemeRegistry";
+import { Providers } from "./providers";
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 
@@ -21,9 +21,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh">
-      <body>
-        <ThemeRegistry>
+    <html lang="zh" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <Providers>
           {children}
           <Toaster position="top-right" toastOptions={{
             duration: 3000,
@@ -32,7 +32,7 @@ export default function RootLayout({
               color: '#fff',
             },
           }} />
-        </ThemeRegistry>
+        </Providers>
       </body>
     </html>
   );
