@@ -19,35 +19,19 @@ ENV NODE_ENV=$NODE_ENV
 RUN apk add  curl git && \
     npm config set registry https://registry.npmmirror.com/ && \
     npm install -g pnpm@8.15.4 && \
-    pnpm config set registry https://registry.npmmirror.com/ \
-    pnpm add -g next
+    pnpm config set registry https://registry.npmmirror.com/
 
-# 设置 npm 镜像
-RUN npm config set registry https://registry.npmmirror.com/ 
-# RUN npm config set registry https://mirrors.aliyun.com/
-
-# 安装 pnpm
-RUN npm install -g pnpm@8.15.4
-    
-# 配置 pnpm 镜像源
-RUN pnpm config set registry https://registry.npmmirror.com/
-# RUN pnpm config set registry https://mirrors.aliyun.com/
-
-# 复制所有源代码
-COPY . .
+# 先复制package.json和pnpm-lock.yaml以利用缓存
+COPY package*.json pnpm-lock.yaml ./
 
 # 安装依赖（包括开发依赖）
 RUN pnpm install --prod=false
 
-# 复制项目文件
+# 复制所有源代码
 COPY . .
 
 # 构建应用
 RUN pnpm build
-
-# 清理缓存
-RUN pnpm cache clean && \
-    rm -rf /var/cache/apk/*
 
 # 暴露端口
 EXPOSE 8000

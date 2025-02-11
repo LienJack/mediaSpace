@@ -11,8 +11,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // output: 'standalone',
   output: 'standalone',
+  // experimental: {
+  //   disablePrerendering: true, // 移除或修正这个选项
+  // },
+  
   // 禁用自动静态优化
   // staticPageGenerationTimeout: 1000,
   // reactStrictMode: true,
