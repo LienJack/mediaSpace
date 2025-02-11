@@ -3,3 +3,4 @@ data/*
 !data/alist/config.json
 *.dockerbuild
 .next
+docker-builds/*

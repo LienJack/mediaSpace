@@ -26,10 +26,10 @@ check_docker_login() {
         exit 1
     fi
     
-    if ! docker system info | grep -q "Username"; then
-        print_error "请先登录 Docker Hub: docker login"
-        exit 1
-    fi
+    # if ! docker system info | grep -q "Username"; then
+    #     print_error "请先登录 Docker Hub: docker login"
+    #     exit 1
+    # fi
 }
 
 # 构建并推送镜像
@@ -65,7 +65,7 @@ build_and_push() {
 # 主函数
 main() {
     # 检查 Docker 登录状态
-    # check_docker_login
+    check_docker_login
     
     # 获取版本号（可选）
     version=${1:-latest}

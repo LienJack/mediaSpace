@@ -44,3 +44,5 @@ services:
 ```bash
 docker-compose up -d
 ```
+
+ bash ./build-export.sh -s all v1.0.0
