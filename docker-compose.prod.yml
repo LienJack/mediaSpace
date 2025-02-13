@@ -11,8 +11,8 @@ services:
       MYSQL_PASSWORD: admin
     restart: always
     volumes:
-      - ./data/mysql/data:/var/lib/mysql
-      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./data/mysql/data:/var/lib/mysql # 挂载mysql数据
+      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql # 挂载初始化sql
     ports:
       - "3307:3306"
     command:
@@ -55,7 +55,7 @@ services:
     container_name: alist
     volumes:
       - ./data/alist:/opt/alist/data
-      - ../alist/mnt:/mnt
+      - ../alist/mnt:/mnt # 挂载本地alist文件夹
     ports:
       - "5244:5244"
     environment:

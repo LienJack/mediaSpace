@@ -17,16 +17,20 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 服务配置
-SERVICES=(backend frontend mysql alist)
+SERVICES=(backend frontend mysql alist redis nginx)
 IMAGES=(
     "lienjoe/mediaspace-backend"
     "lienjoe/mediaspace-frontend"
     "mysql:8.0"
     "xhofe/alist:latest"
+    "redis:7.2-alpine"
+    "nginx:1.25-alpine"
 )
 DOCKERFILES=(
     "server/Dockerfile"
     "web/web-client/Dockerfile"
+    "-"
+    "-"
     "-"
     "-"
 )
@@ -35,7 +39,12 @@ CONTEXTS=(
     "./web/web-client"
     "-"
     "-"
+    "-"
+    "-"
 )
+
+# 定义哪些服务需要本地构建
+LOCAL_BUILD_SERVICES=(backend frontend)
 
 # 镜像源配置
 REGISTRY_MIRRORS=(
@@ -228,6 +237,17 @@ pull_image() {
     return 1
 }
 
+# 检查服务是否需要本地构建
+is_local_build() {
+    local service=$1
+    for s in "${LOCAL_BUILD_SERVICES[@]}"; do
+        if [[ "$s" == "$service" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # 构建并导出单个服务
 build_and_export_service() {
     local service=$1
@@ -249,25 +269,29 @@ build_and_export_service() {
     config=$(get_service_config "$service")
     read -r image_name dockerfile context <<< "$config"
     
-    # 构建或拉取镜像
-    if [[ "$dockerfile" != "-" ]]; then
-        print_info "构建 ${service} 镜像..."
+    # 根据服务类型选择构建或拉取
+    if is_local_build "$service"; then
+        print_info "本地构建 ${service} 服务..."
         if ! docker build --no-cache -t "${image_name}:${version}" -f "$dockerfile" "$context"; then
             print_error "${service} 镜像构建失败"
             return 1
         fi
+        # 本地构建的服务使用指定的版本标签
+        local final_image="${image_name}:${version}"
     else
-        print_info "拉取 ${service} 镜像..."
+        print_info "拉取 ${service} 服务镜像..."
         if ! pull_image "$image_name"; then
             print_error "${service} 镜像拉取失败"
             return 1
         fi
+        # 直接拉取的服务使用原始镜像名（包含其自带的标签）
+        local final_image="${image_name}"
     fi
     
     # 导出镜像
     print_info "导出 ${service} 镜像..."
     local output_file="${OUTPUT_DIR}/mediaspace-${service}-${version}.dockerbuild"
-    if ! docker save "${image_name}:${version}" > "$output_file"; then
+    if ! docker save "${final_image}" > "$output_file"; then
         print_error "${service} 镜像导出失败"
         return 1
     fi
@@ -393,6 +417,44 @@ services:
 - TZ: 时区
 EOF
             ;;
+        "redis")
+            cat >> "$readme_file" << EOF
+\`\`\`yaml
+version: '3.8'
+services:
+  redis:
+    image: redis:7.2-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+\`\`\`
+
+## 环境变量说明：
+- 无
+EOF
+            ;;
+        "nginx")
+            cat >> "$readme_file" << EOF
+\`\`\`yaml
+version: '3.8'
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-config:/etc/nginx/nginx.conf
+      - ./nginx-html:/usr/share/nginx/html
+      - ./nginx-logs:/var/log/nginx
+\`\`\`
+
+## 环境变量说明：
+- 无
+EOF
+            ;;
     esac
     
     # 添加通用注意事项
@@ -419,7 +481,7 @@ MediaSpace Docker 镜像构建工具 v${VERSION}
     $0 [选项] <版本号>
 
 选项:
-    -s, --service <服务名>    指定要构建的服务 (backend|frontend|mysql|alist|all)
+    -s, --service <服务名>    指定要构建的服务 (backend|frontend|mysql|alist|redis|nginx|all)
     -c, --cleanup [数量]      清理旧的构建文件，可选择保留的版本数量
     -d, --debug              启用调试模式
     -h, --help              显示此帮助信息
@@ -430,6 +492,8 @@ MediaSpace Docker 镜像构建工具 v${VERSION}
     frontend  - 前端服务
     mysql     - MySQL数据库
     alist     - Alist文件管理器
+    redis     - Redis数据库
+    nginx     - Nginx反向代理
     all       - 所有服务
 
 示例:
@@ -453,9 +517,9 @@ main() {
     check_requirements
     
     # 检查网络连接
-    if ! check_network; then
-        exit 1
-    fi
+    # if ! check_network; then
+    #     exit 1
+    # fi
     
     # 配置镜像源（如果需要）
     if [[ "${CONFIGURE_MIRRORS:-false}" == "true" ]]; then
