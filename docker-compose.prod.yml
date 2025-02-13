@@ -41,6 +41,7 @@ services:
       args:
         - NGINX_CONF=nginx.prod.conf
     container_name: media-nginx
+    image: nginx:alpine
     ports:
       - "80:80"
     volumes:
