@@ -9,20 +9,31 @@ services:
       MYSQL_DATABASE: mediaspace
       MYSQL_USER: admin
       MYSQL_PASSWORD: admin
+      MYSQL_USER_ID=1000
+      MYSQL_GROUP_ID=1000
     restart: always
     volumes:
-      - mysql_data:/var/lib/mysql  # 修改为使用命名卷而不是本地目录
-      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql # 挂载初始化sql
+      - mysql_data:/var/lib/mysql
+      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "3307:3306"
-    command:
-      --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --explicit_defaults_for_timestamp=true --lower_case_table_names=1
+    command: >
+      bash -c "
+        chown -R mysql:mysql /var/lib/mysql
+        chmod -R 755 /var/lib/mysql
+        mysqld --default-authentication-plugin=mysql_native_password 
+        --character-set-server=utf8mb4 
+        --collation-server=utf8mb4_general_ci 
+        --explicit_defaults_for_timestamp=true 
+        --lower_case_table_names=1
+      "
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    user: "${MYSQL_USER_ID:-1000}:${MYSQL_GROUP_ID:-1000}"
 
   redis:
     image: redis:alpine
