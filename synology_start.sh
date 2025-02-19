@@ -24,8 +24,8 @@ print_error() {
 
 # 日志记录函数
 log_to_file() {
-    local level=$1
-    local message=$2
+    local level="$1"
+    local message="$2"
     local log_file="synology_docker.log"
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$log_file"
 }
@@ -127,7 +127,7 @@ handle_choice() {
     case $1 in
         1)
             print_info "启动服务..."
-            docker compose -f "$compose_file" up -d
+            docker compose up -f "$compose_file" -d
             print_info "服务启动完成"
             ;;
         2)

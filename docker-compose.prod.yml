@@ -11,7 +11,7 @@ services:
       MYSQL_PASSWORD: admin
     restart: always
     volumes:
-      - ./data/mysql/data:/var/lib/mysql # 挂载mysql数据
+      - mysql_data:/var/lib/mysql  # 修改为使用命名卷而不是本地目录
       - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql # 挂载初始化sql
     ports:
       - "3307:3306"
