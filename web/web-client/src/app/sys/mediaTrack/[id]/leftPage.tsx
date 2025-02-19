@@ -29,6 +29,16 @@ export default function LeftPage({ media }: { media?: Media }) {
   const { comments } = useCommentStore();
   // const [videoHeight] = useState<string>('calc(100vh - 220px)');
 
+  // 处理进度点点击
+  const handleDotClick = (timestamp: number) => {
+    // 查找对应时间戳的评论元素
+    const commentElement = document.querySelector(`[data-timestamp="${timestamp}"]`);
+    if (commentElement) {
+      // 平滑滚动到评论位置
+      commentElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // 获取视频URL
   useEffect(() => {
     if (!media) return;
@@ -100,15 +110,15 @@ export default function LeftPage({ media }: { media?: Media }) {
         }}
       >
         <Box sx={{
-          padding: '0 10%',
+          padding: '0 15px',
           width: '100%',
         }}>
           <Video
             url={videoUrl}
-            timeThreshold={5}
             minDotDistance={10}
             progressDots={progressDot}
             onPlayerReady={handlePlayerReady}
+            onDotClick={handleDotClick}
           />
         </Box>
       </Box>

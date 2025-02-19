@@ -26,9 +26,8 @@ export interface VideoProps {
   poster?: string
   autoplay?: boolean
   progressDots?: ProgressDot[] // 标记点配置
-  timeThreshold?: number // 时间阈值，用于分组，默认为 1 秒
   minDotDistance?: number // 最小标记点间距（秒），默认为 5 秒
-  onDotClick?: (dots: ProgressDot[]) => void // 修改为返回分组后的标记点
+  onDotClick?: (timestamp: number) => void // 修改为返回分组后的标记点
   onPlayerReady?: (player: ReactPlayer) => void // 获取播放器实例的回调
 }
 
@@ -38,9 +37,7 @@ const Video = ({
   height,
   poster,
   autoplay = false,
-  progressDots = [],
-  timeThreshold = 1, // 默认 1 秒内的评论会被分组
-  minDotDistance, // 移除默认值，改为动态计算
+  progressDots = [], // 移除默认值，改为动态计算
   onDotClick,
   onPlayerReady
 }: VideoProps) => {
@@ -51,15 +48,7 @@ const Video = ({
   const [played, setPlayed] = useState(0)
   const [seeking, setSeeking] = useState(false)
   const setPlayer = usePlayerStore((state) => state.setPlayer)
-
-
-  // 计算动态最小标记点间距
-  const dynamicMinDotDistance = useMemo(() => {
-    // 如果提供了 minDotDistance，使用提供的值
-    if (minDotDistance !== undefined) return minDotDistance;
-    // 否则根据视频时长动态计算（确保至少为1秒）
-    return Math.max(duration / 100, 1);
-  }, [duration, minDotDistance]);
+  const lastPlayedSeconds = useRef<number>(0)
 
   // 客户端挂载检查
   useEffect(() => {
@@ -92,7 +81,7 @@ const Video = ({
           Math.abs(state.playedSeconds - dot.time) < 0.1 && // 在标记点时间范围内
           onDotClick
         ) {
-          onDotClick([dot])
+          onDotClick(state.playedSeconds)
         }
       })
     }
@@ -135,49 +124,27 @@ const Video = ({
   const groupedDots = useMemo(() => {
     // 按时间排序
     const sortedDots = [...progressDots].sort((a, b) => a.time - b.time);
-    let groups: { [key: number]: ProgressDot[] } = {};
-    
-    // 第一次分组：根据时间阈值
+    const groups: { [key: number]: ProgressDot[] } = {};
+    const TIME_THRESHOLD = 0.5; // 0.5秒阈值
+
+    // 遍历并分组
     sortedDots.forEach(dot => {
-      const groupTime = Object.keys(groups).find(time => 
-        Math.abs(Number(time) - dot.time) <= timeThreshold
-      );
-      
-      if (groupTime) {
-        groups[Number(groupTime)].push(dot);
+      // 查找最近的组
+      const nearestGroupTime = Object.keys(groups)
+        .map(Number)
+        .find(time => Math.abs(time - dot.time) <= TIME_THRESHOLD);
+
+      if (nearestGroupTime !== undefined) {
+        // 如果找到0.5秒内的组，添加到该组
+        groups[nearestGroupTime].push(dot);
       } else {
+        // 否则创建新组
         groups[dot.time] = [dot];
       }
     });
 
-    // 第二次分组：处理密集标记点
-    if (duration > 0) {
-      const groupTimes = Object.keys(groups).map(Number).sort((a, b) => a - b);
-      const newGroups: { [key: number]: ProgressDot[] } = {};
-      let currentGroup: ProgressDot[] = [];
-
-      groupTimes.forEach((time, index) => {
-        const nextTime = groupTimes[index + 1];
-        
-        if (nextTime && (nextTime - time) < dynamicMinDotDistance) {
-          // 如果与下一个标记点距离太近，合并到当前组
-          currentGroup.push(...groups[time]);
-        } else {
-          // 如果与下一个标记点距离足够，或者是最后一个标记点
-          currentGroup.push(...groups[time]);
-          // 使用当前组的平均时间作为新的标记点时间
-          const avgTime = currentGroup.reduce((sum, dot) => sum + dot.time, 0) / currentGroup.length;
-          newGroups[avgTime] = currentGroup;
-          // 重置当前组
-          currentGroup = [];
-        }
-      });
-
-      groups = newGroups;
-    }
-
     return groups;
-  }, [progressDots.length, timeThreshold, dynamicMinDotDistance, duration]);
+  }, [progressDots]);
 
   // 自定义标记点组件
   const CustomDot = ({ dots }: { dots: ProgressDot[] }) => (
@@ -274,7 +241,10 @@ const Video = ({
                   sx={{ ml: 2 }} 
                   color='primary' 
                   style={{ cursor: 'pointer' }}
-                  onClick={() => playerRef.current?.seekTo(dot.time)}
+                  onClick={() => {
+                    playerRef.current?.seekTo(dot.time);
+                    onDotClick?.(dot.time);
+                  }}
                 >
                   {formatTime(dot.time)}
                 </Typography>
@@ -410,7 +380,13 @@ const Video = ({
                     }
                   }}
                 >
-                  <div onClick={() => onDotClick?.(dots)}>
+                  <div 
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      playerRef.current?.seekTo(dot.time);
+                      onDotClick?.(dot.time);
+                    }}
+                  >
                     <CustomDot dots={dots} />
                   </div>
                 </Tooltip>

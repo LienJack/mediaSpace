@@ -31,7 +31,7 @@ export const TextEditor = () => {
   const { user } = useUserStore();
 
   // 使用图片上传Hook
-  const { handlePaste, handleDeleteImage, dropzoneProps } = useImageUpload({
+  const { handlePaste, handleDeleteImage, dropzoneProps, handleSingleFileUpload } = useImageUpload({
     setImages,
     onSuccess: () => toast.success("图片已成功上传", TOAST_CONFIG),
     onError: () => toast.error("图片上传失败", TOAST_CONFIG),
@@ -79,26 +79,23 @@ export const TextEditor = () => {
   };
 
   // 处理文件上传
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
-    
-    Array.from(files).forEach((file) => {
-      if (file.type.startsWith('image/')) {
-        handlePaste({
-          clipboardData: {
-            items: [{
-              type: file.type,
-              getAsFile: () => file
-            }]
-          }
-        } as unknown as React.ClipboardEvent);
+
+    try {
+      await Promise.all(
+        Array.from(files)
+          .filter(file => file.type.startsWith('image/'))
+          .map(file => handleSingleFileUpload(file))
+      );
+    } catch (err: unknown) {
+      console.error('文件上传失败:', err);
+      toast.error('文件上传失败', TOAST_CONFIG);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
-    });
-    
-    // 清空input的value，确保可以重复上传相同的文件
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 

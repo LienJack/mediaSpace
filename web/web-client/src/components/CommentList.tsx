@@ -55,6 +55,7 @@ const CommentGroup: FC<CommentGroupProps> = ({
           },
         }}
         onClick={() => onTimeClick?.(timestamp)}
+        data-timestamp={timestamp}
       >
         {formatTime(timestamp)}
       </Typography>
@@ -126,7 +127,7 @@ const CommentList: FC<CommentListProps> = ({ onTimeClick }) => {
 
   // 渲染评论列表
   return (
-    <Box sx={{ pb: 16 }}>
+    <Box sx={{ pb: sortedTimestamps.length > 1 ? '100vh' : 0 }}>
       {sortedTimestamps.map((timestamp) => (
         <CommentGroup
           key={timestamp}

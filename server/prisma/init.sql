@@ -91,25 +91,25 @@ CREATE TABLE IF NOT EXISTS alist_storages (
     down_proxy_url TEXT
 );
 
-CREATE TABLE IF NOT EXISTS alist_setting_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    `key` VARCHAR(255) NOT NULL,
-    value TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+-- CREATE TABLE IF NOT EXISTS alist_setting_items (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     `key` VARCHAR(255) NOT NULL,
+--     value TEXT,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- );
 
--- 检查并插入alist_storages数据
-INSERT INTO alist_storages (mount_path, `order`, driver, cache_expiration, status, addition, remark, modified, disabled, disable_index, enable_sign, order_by, order_direction, extract_folder, web_proxy, webdav_policy, proxy_range, down_proxy_url)
-SELECT '/local', '0', 'Local', '0', 'work', 
-       '{\"root_folder_path\":\"/mnt\",\"thumbnail\":false,\"thumb_cache_folder\":\"\",\"thumb_concurrency\":\"16\",\"video_thumb_pos\":\"20%\",\"show_hidden\":true,\"mkdir_perm\":\"777\",\"recycle_bin_path\":\"delete permanently\"}',
-       '', '2025-02-05 21:13:40.783000', '0', '0', '0', '', '', '', '0', 'native_proxy', '0', ''
-WHERE NOT EXISTS (
-    SELECT 1 FROM alist_storages WHERE mount_path = '/local'
-);
+-- -- 检查并插入alist_storages数据
+-- INSERT INTO alist_storages (mount_path, `order`, driver, cache_expiration, status, addition, remark, modified, disabled, disable_index, enable_sign, order_by, order_direction, extract_folder, web_proxy, webdav_policy, proxy_range, down_proxy_url)
+-- SELECT '/local', '0', 'Local', '0', 'work', 
+--        '{\"root_folder_path\":\"/mnt\",\"thumbnail\":false,\"thumb_cache_folder\":\"\",\"thumb_concurrency\":\"16\",\"video_thumb_pos\":\"20%\",\"show_hidden\":true,\"mkdir_perm\":\"777\",\"recycle_bin_path\":\"delete permanently\"}',
+--        '', '2025-02-05 21:13:40.783000', '0', '0', '0', '', '', '', '0', 'native_proxy', '0', ''
+-- WHERE NOT EXISTS (
+--     SELECT 1 FROM alist_storages WHERE mount_path = '/local'
+-- );
 
--- 检查并更新sign_all设置
-INSERT INTO alist_setting_items (`key`, value)
-SELECT 'sign_all', 'false'
-WHERE NOT EXISTS (
-    SELECT 1 FROM alist_setting_items WHERE `key` = 'sign_all');
+-- -- 检查并更新sign_all设置
+-- INSERT INTO alist_setting_items (`key`, value)
+-- SELECT 'sign_all', 'false'
+-- WHERE NOT EXISTS (
+--     SELECT 1 FROM alist_setting_items WHERE `key` = 'sign_all');

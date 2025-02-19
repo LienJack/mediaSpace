@@ -113,17 +113,20 @@ export default function UserEditor({
     }
   }, [open, currentUser, isEditing, reset]);
 
-  // 图片上传处理
+  // 使用 useImageUpload hook 处理头像上传
   const { dropzoneProps } = useImageUpload({
-    setImages: () => {},
+    setImages: () => {}, // 由于我们只需要单个头像，这里可以是空函数
     onSuccess: (url: string) => {
       setValue("avatarUrl", url);
-      setAvatarUrl(url); // 更新头像URL状态
+      setAvatarUrl(url);
     },
-    onError: (error) => console.error("上传失败:", error),
+    onError: (error) => {
+      console.error("头像上传失败:", error);
+      // 这里可以添加错误提示UI
+    },
   });
 
-  // 头像点击处理
+  // 简化的头像点击处理函数
   const handleAvatarClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -133,17 +136,38 @@ export default function UserEditor({
       const target = e.target as HTMLInputElement;
       if (target.files?.[0]) {
         const file = target.files[0];
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        const inputProps = dropzoneProps.getInputProps();
-        if (inputProps.onChange) {
-          inputProps.onChange({
+        
+        // 检查文件类型
+        if (!file.type.startsWith('image/')) {
+          console.error('请选择图片文件');
+          return;
+        }
+
+        // 检查文件大小（例如限制为5MB）
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (file.size > MAX_SIZE) {
+          console.error('文件大小不能超过5MB');
+          return;
+        }
+
+        try {
+          // 创建一个模拟的React ChangeEvent对象
+          const mockEvent = {
+            type: 'change',
+            target: {
+              files: [file]
+            },
             preventDefault: () => {},
             stopPropagation: () => {},
             persist: () => {},
-            target: { files: dataTransfer.files },
-            type: 'drop'
-          } as unknown as React.ChangeEvent<HTMLInputElement>);
+          };
+          
+          const inputProps = dropzoneProps.getInputProps();
+          if (inputProps.onChange) {
+            inputProps.onChange(mockEvent as unknown as React.ChangeEvent<HTMLInputElement>);
+          }
+        } catch (error) {
+          console.error('处理文件上传时出错:', error);
         }
       }
     };

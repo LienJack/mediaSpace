@@ -45,6 +45,7 @@ services:
       - mysql
 
   nginx:
+    image: nginx:alpine
     build:
       context: .
       dockerfile: Dockerfile

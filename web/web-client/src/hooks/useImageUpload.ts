@@ -7,12 +7,14 @@ interface UseImageUploadProps {
   setImages: React.Dispatch<React.SetStateAction<ImageFile[]>>;
   onSuccess?: (url: string) => void;
   onError?: (error: Error) => void;
+  onProgress?: (progress: number) => void;
 }
 
 export const useImageUpload = ({
   setImages,
   onSuccess,
   onError,
+  onProgress,
 }: UseImageUploadProps) => {
   // 处理单个文件上传
   const handleSingleFileUpload = useCallback(
@@ -29,8 +31,13 @@ export const useImageUpload = ({
         rawUrl: '',
       };
 
+      let imageIndex: number;
+
       // 添加到图片列表
-      setImages((prev) => [...prev, newImage]);
+      setImages((prev) => {
+        imageIndex = prev.length;
+        return [...prev, newImage];
+      });
 
       try {
         // 上传图片
@@ -38,14 +45,14 @@ export const useImageUpload = ({
 
         // 更新图片状态
         setImages((prev) => {
-          const index = prev.findIndex((img) => img.preview === preview);
-          if (index === -1) return prev;
           const newImages = [...prev];
-          newImages[index] = {
-            ...newImages[index],
-            progress: 100,
-            rawUrl: url,
-          };
+          if (newImages[imageIndex]) {
+            newImages[imageIndex] = {
+              ...newImages[imageIndex],
+              progress: 100,
+              rawUrl: url,
+            };
+          }
           return newImages;
         });
 
@@ -69,6 +76,7 @@ export const useImageUpload = ({
       const items = event.clipboardData.items;
       const imageFiles: File[] = [];
 
+      // 收集所有图片文件
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (item.type.indexOf('image') !== -1) {
@@ -81,13 +89,53 @@ export const useImageUpload = ({
 
       if (imageFiles.length === 0) return;
 
+      // 创建上传队列
+      const uploadQueue = imageFiles.map((file) => ({
+        file,
+        status: 'pending' as 'pending' | 'uploading' | 'done' | 'error',
+      }));
+
+      // 并行上传所有图片，但限制并发数
+      const MAX_CONCURRENT_UPLOADS = 3;
+      const results: Array<string | null> = [];
+      
+      const uploadNext = async (index: number) => {
+        if (index >= uploadQueue.length) return;
+        
+        const current = uploadQueue[index];
+        current.status = 'uploading';
+        
+        try {
+          const url = await handleSingleFileUpload(current.file);
+          current.status = 'done';
+          results[index] = url;
+          
+          // 更新总体进度
+          const progress = Math.round(
+            ((results.filter(Boolean).length) / uploadQueue.length) * 100
+          );
+          onProgress?.(progress);
+          
+          // 继续上传队列中的下一个
+          await uploadNext(index + MAX_CONCURRENT_UPLOADS);
+        } catch (error) {
+          current.status = 'error';
+          results[index] = null;
+          console.error(`Failed to upload image ${index}:`, error);
+        }
+      };
+
+      // 启动初始的并发上传
       try {
-        await Promise.all(imageFiles.map(handleSingleFileUpload));
+        await Promise.all(
+          Array.from({ length: Math.min(MAX_CONCURRENT_UPLOADS, uploadQueue.length) })
+            .map((_, index) => uploadNext(index))
+        );
       } catch (error) {
         console.error('批量上传图片失败:', error);
       }
     },
-    [handleSingleFileUpload]
+    [handleSingleFileUpload, onProgress]
   );
 
   // 配置 Dropzone
@@ -127,5 +175,6 @@ export const useImageUpload = ({
       getInputProps,
       isDragActive,
     },
+    handleSingleFileUpload,
   };
 }; 

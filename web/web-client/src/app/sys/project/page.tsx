@@ -31,15 +31,15 @@ const NoSSR = dynamic(() => import("@/components/NoSSR"), {
 
 // 类型定义
 interface ProjectCardSkeletonProps {
-  key: number;
+  index: number;
 }
 
 // 常量定义
 const SKELETON_COUNT = 3;
 
 // 组件定义
-const ProjectCardSkeleton = ({ key }: ProjectCardSkeletonProps) => (
-  <Grid size={4} key={key}>
+const ProjectCardSkeleton = ({ index }: ProjectCardSkeletonProps) => (
+  <Grid size={4} key={index}>
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardContent sx={{ flexGrow: 1 }}>
         <Skeleton variant="text" width="60%" height={32} sx={{ mb: 1 }} />
@@ -149,7 +149,7 @@ export default function ProjectPage() {
 
   const renderMediaCard = (media: Media) => (
     <Grid size={4} key={media.id}>
-      <NoSSR fallback={<ProjectCardSkeleton key={media.id} />}>
+      <NoSSR fallback={<ProjectCardSkeleton index={media.id} />}>
         <Card
           sx={{
             height: "100%",
@@ -247,16 +247,16 @@ export default function ProjectPage() {
         <NoSSR fallback={
           <Grid container spacing={3}>
             {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-              <ProjectCardSkeleton key={index} />
+              <ProjectCardSkeleton index={index} key={index}/>
             ))}
           </Grid>
         }>
           <Grid container spacing={3}>
             {isLoading
               ? Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-                  <ProjectCardSkeleton key={index} />
+                  <ProjectCardSkeleton index={index} key={index}/>
                 ))
-              : mediaList.map(renderMediaCard)}
+              : mediaList.length > 0 ? mediaList.map(renderMediaCard) : <Typography variant="body2" color="text.secondary">暂无项目</Typography>}
           </Grid>
         </NoSSR>
       </Container>
